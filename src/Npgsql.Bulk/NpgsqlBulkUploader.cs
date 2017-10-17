@@ -4,10 +4,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+#if NETSTANDARD1_5 || NETSTANDARD2_0
+using Microsoft.EntityFrameworkCore;
+#else
 using System.Data.Entity;
+#endif
 using System.Linq;
 using System.Reflection;
-using Npgsql.Bulk.DAL;
 using Npgsql.Bulk.Model;
 
 namespace Npgsql.Bulk
@@ -26,9 +29,9 @@ namespace Npgsql.Bulk
             this.context = context;
         }
 
-        private NpgsqlDbType GetNpgsqlType(string type)
+        private NpgsqlDbType GetNpgsqlType(ColumnInfo info)
         {
-            switch (type)
+            switch (info.ColumnType)
             {
                 case "integer":
                 case "int":
@@ -54,14 +57,24 @@ namespace Npgsql.Bulk
                 case "bigint":
                     return NpgsqlDbType.Bigint;
                 case "timetz":
-                    return NpgsqlDbType.TimestampTZ;
+                    return NpgsqlDbType.TimeTZ;
+                case "time":
+                    return NpgsqlDbType.Time;
                 case "date":
                     return NpgsqlDbType.Date;
                 case "smallint":
                     return NpgsqlDbType.Smallint;
                 case "uuid":
                     return NpgsqlDbType.Uuid;
+                case "timestamp":
+                    return NpgsqlDbType.Timestamp;
+                case "timestamptz":
+                    return NpgsqlDbType.TimestampTZ;
                 default:
+
+                    if (info.ColumnTypeExtra.Equals("array", StringComparison.OrdinalIgnoreCase))
+                        return NpgsqlDbType.Array;
+
                     throw new NotImplementedException();
             }
         }
@@ -102,14 +115,11 @@ namespace Npgsql.Bulk
 
         public void Insert<T>(IEnumerable<T> entities)
         {
-            EnsureConnected();
-            var db = context.Database;
-            var conn = (NpgsqlConnection)db.Connection;
-            var mapping = GetEntityInfo<T>();
+            var conn = NpgsqlHelper.GetNpgsqlConnection(context);
+            EnsureConnected(conn);
+            var transaction = NpgsqlHelper.EnsureOrStartTransaction(context);
 
-            DbContextTransaction transaction = null;
-            if (db.CurrentTransaction == null)
-                transaction = db.BeginTransaction();
+            var mapping = GetEntityInfo<T>();
 
             try
             {
@@ -127,8 +137,8 @@ namespace Npgsql.Bulk
                         ReadValue);
 
                 // 1. Create temp table 
-                db.ExecuteSqlCommand(
-                    $"CREATE TEMP TABLE {tempTableName} ON COMMIT DROP AS SELECT {dataColumns} FROM {tableName} LIMIT 0");
+                var sql = $"CREATE TEMP TABLE {tempTableName} ON COMMIT DROP AS SELECT {dataColumns} FROM {tableName} LIMIT 0";
+                context.Database.ExecuteSqlCommand(sql);
 
                 // 2. Import into temp table
                 using (var importer = conn.BeginBinaryImport($"COPY {tempTableName} ({dataColumns}) FROM STDIN (FORMAT BINARY)"))
@@ -144,16 +154,23 @@ namespace Npgsql.Bulk
                 // 3. Insert into real table from temp one
                 using (var cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = $"INSERT INTO {tableName} ({dataColumns}) SELECT {dataColumns} FROM {tempTableName} RETURNING {dbGenColumns}";
+                    var dbGenMappings = mapping.DbGeneratedInfos.Value;
+                    cmd.CommandText = $"INSERT INTO {tableName} ({dataColumns}) SELECT {dataColumns} FROM {tempTableName} ";
+                    if (dbGenMappings.Any())
+                    {
+                        cmd.CommandText += $"RETURNING {dbGenColumns}";
+                    }
                     using (var reader = cmd.ExecuteReader())
                     {
                         // 4. Propagate computed value
-                        var dbGenMappings = mapping.DbGeneratedInfos.Value;
-                        foreach (var item in list)
+                        if (dbGenMappings.Any())
                         {
-                            reader.Read();
-                            //PropagateDbGeneratedValues(item, dbGenMappings, reader);
-                            codeBuilder.IdentityValuesWriterAction(item, reader);
+                            foreach (var item in list)
+                            {
+                                reader.Read();
+                                //PropagateDbGeneratedValues(item, dbGenMappings, reader);
+                                codeBuilder.IdentityValuesWriterAction(item, reader);
+                            }
                         }
                     }
                 }
@@ -170,14 +187,11 @@ namespace Npgsql.Bulk
 
         public void Update<T>(IEnumerable<T> entities)
         {
-            EnsureConnected();
-            var db = context.Database;
-            var conn = (NpgsqlConnection)db.Connection;
-            var mapping = GetEntityInfo<T>();
+            var conn = NpgsqlHelper.GetNpgsqlConnection(context);
+            EnsureConnected(conn);
+            var transaction = NpgsqlHelper.EnsureOrStartTransaction(context);
 
-            DbContextTransaction transaction = null;
-            if (db.CurrentTransaction == null)
-                transaction = db.BeginTransaction();
+            var mapping = GetEntityInfo<T>();
 
             try
             {
@@ -193,8 +207,8 @@ namespace Npgsql.Bulk
                         ReadValue);
 
                 // 1. Create temp table 
-                db.ExecuteSqlCommand(
-                    $"CREATE TEMP TABLE {tempTableName} ON COMMIT DROP AS SELECT {dataColumns} FROM {tableName} LIMIT 0");
+                var sql = $"CREATE TEMP TABLE {tempTableName} ON COMMIT DROP AS SELECT {dataColumns} FROM {tableName} LIMIT 0";
+                context.Database.ExecuteSqlCommand(sql);
 
                 // 2. Import into temp table
                 using (var importer = conn.BeginBinaryImport($"COPY {tempTableName} ({dataColumns}) FROM STDIN (FORMAT BINARY)"))
@@ -234,7 +248,8 @@ namespace Npgsql.Bulk
                     PropertyInfo = x,
                     ColumnAttribute = x.GetCustomAttribute<ColumnAttribute>(),
                     DbGeneratedAttribute = x.GetCustomAttribute<DatabaseGeneratedAttribute>(),
-                    KeyAttribute = x.GetCustomAttribute<KeyAttribute>()
+                    KeyAttribute = x.GetCustomAttribute<KeyAttribute>(),
+                    SourceAttribute = x.GetCustomAttribute<BulkMappingSourceAttribute>()
                 })
                 .Where(x => x.ColumnAttribute != null)
                 .Select(x => new MappingInfo()
@@ -242,28 +257,36 @@ namespace Npgsql.Bulk
                     Property = x.PropertyInfo,
                     ColumnInfo = columns.First(c => c.ColumnName == x.ColumnAttribute.Name),
                     IsDbGenerated = x.DbGeneratedAttribute != null,
-                    IsKey = x.KeyAttribute != null
+                    IsKey = x.KeyAttribute != null,
+                    OverrideSourceMethod = GetOverrideSouceFunc(type, x.SourceAttribute?.PropertyName)
                 })
                 .ToList();
 
-            mappings.ForEach(x => x.NpgsqlType = GetNpgsqlType(x.ColumnInfo.ColumnType));
+            mappings.ForEach(x => x.NpgsqlType = GetNpgsqlType(x.ColumnInfo));
 
             return mappings;
         }
 
-        private List<ColumnInfo> GetTableSchema(string tableName)
+        private MethodInfo GetOverrideSouceFunc(Type t, string memberName)
         {
-            return context.Database.SqlQuery<ColumnInfo>(@"
-                    SELECT column_name as ColumnName, udt_name as ColumnType, (column_default IS NOT NULL) as HasDefault 
-                    FROM information_schema.columns
-                    WHERE table_name = @tableName",
-                new NpgsqlParameter("@tableName", tableName)).ToList();
+            if (memberName == null) return null;
+
+            var propInfo = t.GetProperty(memberName);
+            if (propInfo != null)
+                return propInfo.GetGetMethod();
+
+            return null;
         }
 
-        private void EnsureConnected()
+        private List<ColumnInfo> GetTableSchema(string tableName)
         {
-            if (context.Database.Connection.State != System.Data.ConnectionState.Open)
-                context.Database.Connection.Open();
+            return NpgsqlHelper.GetColumnsInfo(context, tableName);
+        }
+
+        private void EnsureConnected(NpgsqlConnection conn)
+        {
+            if (conn.State != System.Data.ConnectionState.Open)
+                conn.Open();
         }
 
         private EntityInfo GetEntityInfo<T>()

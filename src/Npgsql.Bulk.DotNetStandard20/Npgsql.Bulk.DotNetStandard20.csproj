@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Npgsql.Bulk</RootNamespace>
+    <AssemblyName>Npgsql.Bulk</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Npgsql.Bulk.DotNetStandard15\NpgsqlHelper.cs" Link="NpgsqlHelper.cs" />
+    <Compile Include="..\Npgsql.Bulk\BulkMappingSourceAttribute.cs" Link="BulkMappingSourceAttribute.cs" />
+    <Compile Include="..\Npgsql.Bulk\Model\ColumnInfo.cs" Link="Model\ColumnInfo.cs" />
+    <Compile Include="..\Npgsql.Bulk\Model\EntityInfo.cs" Link="Model\EntityInfo.cs" />
+    <Compile Include="..\Npgsql.Bulk\Model\MappingInfo.cs" Link="Model\MappingInfo.cs" />
+    <Compile Include="..\Npgsql.Bulk\NpgsqlBulkCodeBuilder.cs" Link="NpgsqlBulkCodeBuilder.cs" />
+    <Compile Include="..\Npgsql.Bulk\NpgsqlBulkUploader.cs" Link="NpgsqlBulkUploader.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.0.0" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Model\" />
+  </ItemGroup>
+
+</Project>

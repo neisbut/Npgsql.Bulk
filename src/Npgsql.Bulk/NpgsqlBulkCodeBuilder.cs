@@ -32,11 +32,10 @@ namespace Npgsql.Bulk
             MappingInfo[] identityMappingInfos,
             Func<Type, NpgsqlDataReader, string, object> readerFunc)
         {
-            var myDomain = AppDomain.CurrentDomain;
             var name = $"{typeof(T).Name}_{DateTime.Now.Ticks}";
             assemblyName = new AssemblyName { Name = name };
 
-            assemblyBuilder = myDomain.DefineDynamicAssembly(
+            assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(
                 assemblyName, AssemblyBuilderAccess.Run);
 
             moduleBuilder = assemblyBuilder.DefineDynamicModule(name);
@@ -56,7 +55,11 @@ namespace Npgsql.Bulk
             CreateWriterMethod("ClientDataWithKeyWriter", clientDataWithKeyInfos);
             CreateReaderMethod("IdentityValuesWriter", identityMappingInfos, readerFunc);
 
+#if NETSTANDARD1_5 || NETSTANDARD2_0
+            generatedType = typeBuilder.CreateTypeInfo().AsType();
+#else
             generatedType = typeBuilder.CreateType();
+#endif
 
             ClientDataWriterAction = (Action<T, NpgsqlBinaryImporter>)generatedType.GetMethod("ClientDataWriter")
                 .CreateDelegate(typeof(Action<T, NpgsqlBinaryImporter>));
@@ -77,18 +80,30 @@ namespace Npgsql.Bulk
                 new[] { typeof(T), typeof(NpgsqlBinaryImporter) });
 
             var ilOut = methodBuilder.GetILGenerator();
-            var writeMethod = typeof(NpgsqlBinaryImporter).GetMethods()
+            var writeMethods = typeof(NpgsqlBinaryImporter).GetMethods()
                 .Where((x) => x.Name == "Write")
                 .OrderByDescending(x => x.GetParameters().Length)
-                .First();
+                .ToArray();
+            var writeMethodFull = writeMethods[0];
+            var writeMethodShort = writeMethods[1];
+
 
             foreach (var info in infos)
             {
+                var mi = (info.OverrideSourceMethod) ?? info.Property.GetGetMethod();
+                if (mi == null) throw new InvalidOperationException($"Property {info.Property.Name} is not accessible for bulk write");
                 ilOut.Emit(OpCodes.Ldarg_1);
                 ilOut.Emit(OpCodes.Ldarg_0);
-                ilOut.Emit(OpCodes.Call, info.Property.GetGetMethod());
-                ilOut.Emit(OpCodes.Ldc_I4_S, (long)info.NpgsqlType);
-                ilOut.Emit(OpCodes.Call, writeMethod.MakeGenericMethod(info.Property.PropertyType));
+                ilOut.Emit(OpCodes.Call, mi);
+                if (info.NpgsqlType == NpgsqlTypes.NpgsqlDbType.Array)
+                {
+                    ilOut.Emit(OpCodes.Call, writeMethodShort.MakeGenericMethod(mi.ReturnType));
+                }
+                else
+                {
+                    ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
+                    ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(mi.ReturnType));
+                }
             }
 
             ilOut.Emit(OpCodes.Ret);
@@ -115,7 +130,7 @@ namespace Npgsql.Bulk
                 ilOut.Emit(OpCodes.Call, getTypeFromHandle);
                 ilOut.Emit(OpCodes.Ldarg_1);
                 ilOut.Emit(OpCodes.Ldstr, info.ColumnInfo.ColumnName);
-                ilOut.Emit(OpCodes.Call, readerFunc.Method);
+                ilOut.Emit(OpCodes.Call, readerFunc.GetMethodInfo());
                 ilOut.Emit(OpCodes.Unbox_Any, info.Property.PropertyType);
                 ilOut.Emit(OpCodes.Callvirt, info.Property.GetSetMethod());
             }
