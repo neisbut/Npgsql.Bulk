@@ -70,6 +70,8 @@ namespace Npgsql.Bulk
                     return NpgsqlDbType.Timestamp;
                 case "timestamptz":
                     return NpgsqlDbType.TimestampTZ;
+                case "bpchar":
+                    return NpgsqlDbType.Char;
                 default:
 
                     if (info.ColumnTypeExtra.Equals("array", StringComparison.OrdinalIgnoreCase))
