@@ -1,5 +1,7 @@
 # Npgsql.Bulk
-A sample code for EF6 + Npgsql + Bulk INSERT\UPDATE
+Helper for performing COPY (bulk insert and update) operation easily, using Entity Framework + Npgsql. 
+
+.Net 4.5, Standard 1.5 and Standard 2.0 are supported.
 
 ```c#
 var uploader = new NpgsqlBulkUploader(context);
