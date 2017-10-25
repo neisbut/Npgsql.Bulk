@@ -13,7 +13,9 @@
     <Compile Include="..\Npgsql.Bulk\BulkMappingSourceAttribute.cs" Link="BulkMappingSourceAttribute.cs" />
     <Compile Include="..\Npgsql.Bulk\Model\ColumnInfo.cs" Link="Model\ColumnInfo.cs" />
     <Compile Include="..\Npgsql.Bulk\Model\EntityInfo.cs" Link="Model\EntityInfo.cs" />
+    <Compile Include="..\Npgsql.Bulk\Model\InsertQueryParts.cs" Link="Model\InsertQueryParts.cs" />
     <Compile Include="..\Npgsql.Bulk\Model\MappingInfo.cs" Link="Model\MappingInfo.cs" />
+    <Compile Include="..\Npgsql.Bulk\Model\UpdateQueryParts.cs" Link="Model\UpdateQueryParts.cs" />
     <Compile Include="..\Npgsql.Bulk\NpgsqlBulkCodeBuilder.cs" Link="NpgsqlBulkCodeBuilder.cs" />
     <Compile Include="..\Npgsql.Bulk\NpgsqlBulkUploader.cs" Link="NpgsqlBulkUploader.cs" />
   </ItemGroup>

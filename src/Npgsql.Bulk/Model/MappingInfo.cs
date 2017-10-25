@@ -6,6 +6,14 @@ namespace Npgsql.Bulk.Model
 {
     internal class MappingInfo
     {
+        public bool IsInheritanceUsed { get; set; }
+
+        public string TableName { get; set; }
+
+        public string TempAliasedColumnName { get; internal set; }
+
+        public string QualifiedColumnName { get; internal set; }
+
         public PropertyInfo Property { get; set; }
 
         public MethodInfo OverrideSourceMethod { get; set; }

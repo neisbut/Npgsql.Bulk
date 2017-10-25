@@ -12,6 +12,7 @@ using System.Data.Entity;
 using System.Linq;
 using System.Reflection;
 using Npgsql.Bulk.Model;
+using System.Text;
 
 namespace Npgsql.Bulk
 {
@@ -51,6 +52,8 @@ namespace Npgsql.Bulk
                 case "numeric":
                 case "decimal":
                     return NpgsqlDbType.Numeric;
+                case "citext":
+                    return NpgsqlDbType.Citext;
                 case "text":
                     return NpgsqlDbType.Text;
                 case "int8":
@@ -126,52 +129,64 @@ namespace Npgsql.Bulk
             try
             {
                 // 0. Prepare variables
-                var dataColumns = mapping.ClientDataColumnNames.Value;
-                var dbGenColumns = mapping.DbGeneratedColumnNames.Value;
-                var tableName = mapping.TableNameQualified;
                 var tempTableName = "_temp_" + DateTime.Now.Ticks;
                 var list = entities.ToList();
                 var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
                 if (!codeBuilder.IsInitialized)
-                    codeBuilder.InitBuilder(mapping.ClientDataInfos.Value,
-                        mapping.ClientDataWithKeysInfos.Value,
-                        mapping.DbGeneratedInfos.Value,
+                    codeBuilder.InitBuilder(mapping.ClientDataInfos,
+                        mapping.ClientDataWithKeysInfos,
+                        mapping.DbGeneratedInfos,
                         ReadValue);
 
                 // 1. Create temp table 
-                var sql = $"CREATE TEMP TABLE {tempTableName} ON COMMIT DROP AS SELECT {dataColumns} FROM {tableName} LIMIT 0";
+                var sql = $"CREATE TEMP TABLE {tempTableName} ON COMMIT DROP AS {mapping.SelectSourceForInsertQuery} LIMIT 0";
                 context.Database.ExecuteSqlCommand(sql);
+                context.Database.ExecuteSqlCommand($"ALTER TABLE {tempTableName} ADD COLUMN __index integer");
 
                 // 2. Import into temp table
-                using (var importer = conn.BeginBinaryImport($"COPY {tempTableName} ({dataColumns}) FROM STDIN (FORMAT BINARY)"))
+                using (var importer = conn.BeginBinaryImport($"COPY {tempTableName} ({mapping.CopyColumnsForInsertQueryPart}, __index) FROM STDIN (FORMAT BINARY)"))
                 {
+                    var index = 1;
                     foreach (var item in list)
                     {
                         importer.StartRow();
-                        //WriteRow(item, mapping.ClientDataInfos.Value, importer);
                         codeBuilder.ClientDataWriterAction(item, importer);
+                        importer.Write(index, NpgsqlDbType.Integer);
+                        index++;
                     }
                 }
 
                 // 3. Insert into real table from temp one
-                using (var cmd = conn.CreateCommand())
+                foreach (var insertPart in mapping.InsertQueryParts)
                 {
-                    var dbGenMappings = mapping.DbGeneratedInfos.Value;
-                    cmd.CommandText = $"INSERT INTO {tableName} ({dataColumns}) SELECT {dataColumns} FROM {tempTableName} ";
-                    if (dbGenMappings.Any())
+                    using (var cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText += $"RETURNING {dbGenColumns}";
-                    }
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        // 4. Propagate computed value
-                        if (dbGenMappings.Any())
+                        var baseInsertCmd = $"INSERT INTO {insertPart.TableName} ({insertPart.TargetColumnNamesQueryPart}) SELECT {insertPart.SourceColumnNamesQueryPart} FROM {tempTableName}";
+                        if (string.IsNullOrEmpty(insertPart.ReturningSetQueryPart))
                         {
-                            foreach (var item in list)
+                            cmd.CommandText = baseInsertCmd;
+                            if (!string.IsNullOrEmpty(insertPart.Returning))
+                                cmd.CommandText += $" RETURNING {insertPart.Returning}";
+                        }
+                        else
+                        {
+                            cmd.CommandText = $"WITH inserted as (\n {baseInsertCmd} RETURNING {insertPart.Returning} \n ), \n";
+                            cmd.CommandText += $"source as (\n SELECT *, ROW_NUMBER() OVER (ORDER BY {insertPart.Returning}) as __index FROM inserted \n ) \n";
+                            cmd.CommandText += $"UPDATE {tempTableName} SET {insertPart.ReturningSetQueryPart} FROM source WHERE {tempTableName}.__index = source.__index\n";
+                            cmd.CommandText += $" RETURNING {insertPart.Returning}";
+                        }
+
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            // 4. Propagate computed value
+                            if (!string.IsNullOrEmpty(insertPart.Returning))
                             {
-                                reader.Read();
-                                //PropagateDbGeneratedValues(item, dbGenMappings, reader);
-                                codeBuilder.IdentityValuesWriterAction(item, reader);
+                                var readAction = codeBuilder.IdentityValuesWriterActions[insertPart.TableName];
+                                foreach (var item in list)
+                                {
+                                    reader.Read();
+                                    readAction(item, reader);
+                                }
                             }
                         }
                     }
@@ -198,36 +213,38 @@ namespace Npgsql.Bulk
             try
             {
                 // 0. Prepare variables
-                var dataColumns = mapping.ClientDataWithKeysColumnNames.Value;
+                var dataColumns = mapping.ClientDataWithKeysColumnNames;
                 var tableName = mapping.TableNameQualified;
                 var tempTableName = "_temp_" + DateTime.Now.Ticks;
                 var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
                 if (!codeBuilder.IsInitialized)
-                    codeBuilder.InitBuilder(mapping.ClientDataInfos.Value,
-                        mapping.ClientDataWithKeysInfos.Value,
-                        mapping.DbGeneratedInfos.Value,
+                    codeBuilder.InitBuilder(mapping.ClientDataInfos,
+                        mapping.ClientDataWithKeysInfos,
+                        mapping.DbGeneratedInfos,
                         ReadValue);
 
                 // 1. Create temp table 
-                var sql = $"CREATE TEMP TABLE {tempTableName} ON COMMIT DROP AS SELECT {dataColumns} FROM {tableName} LIMIT 0";
+                var sql = $"CREATE TEMP TABLE {tempTableName} ON COMMIT DROP AS {mapping.SelectSourceForUpdateQuery} LIMIT 0";
                 context.Database.ExecuteSqlCommand(sql);
 
                 // 2. Import into temp table
-                using (var importer = conn.BeginBinaryImport($"COPY {tempTableName} ({dataColumns}) FROM STDIN (FORMAT BINARY)"))
+                using (var importer = conn.BeginBinaryImport($"COPY {tempTableName} ({mapping.CopyColumnsForUpdateQueryPart}) FROM STDIN (FORMAT BINARY)"))
                 {
                     foreach (var item in entities)
                     {
                         importer.StartRow();
-                        //WriteRow(item, mapping.ClientDataWithKeysInfos.Value, importer);
                         codeBuilder.ClientDataWithKeyWriterAction(item, importer);
                     }
                 }
 
                 // 3. Insert into real table from temp one
-                using (var cmd = conn.CreateCommand())
+                foreach (var part in mapping.UpdateQueryParts)
                 {
-                    cmd.CommandText = $"UPDATE {tableName} SET {mapping.SetClause.Value} FROM {tempTableName} source WHERE {mapping.WhereClause.Value}";
-                    cmd.ExecuteNonQuery();
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = $"UPDATE {part.TableName} SET {part.SetClause} FROM {tempTableName} as source WHERE {part.WhereClause}";
+                        cmd.ExecuteNonQuery();
+                    }
                 }
 
                 // 5. Commit
@@ -242,30 +259,16 @@ namespace Npgsql.Bulk
 
         private List<MappingInfo> GetMappingInfo(Type type, string tableName)
         {
-            var columns = GetTableSchema(tableName);
-            var mappings = type.GetProperties(BindingFlags.NonPublic | BindingFlags.Public |
-                    BindingFlags.GetProperty | BindingFlags.Instance)
-                .Select(x => new
-                {
-                    PropertyInfo = x,
-                    ColumnAttribute = x.GetCustomAttribute<ColumnAttribute>(),
-                    DbGeneratedAttribute = x.GetCustomAttribute<DatabaseGeneratedAttribute>(),
-                    KeyAttribute = x.GetCustomAttribute<KeyAttribute>(),
-                    SourceAttribute = x.GetCustomAttribute<BulkMappingSourceAttribute>()
-                })
-                .Where(x => x.ColumnAttribute != null)
-                .Select(x => new MappingInfo()
-                {
-                    Property = x.PropertyInfo,
-                    ColumnInfo = columns.First(c => c.ColumnName == x.ColumnAttribute.Name),
-                    IsDbGenerated = x.DbGeneratedAttribute != null,
-                    IsKey = x.KeyAttribute != null,
-                    OverrideSourceMethod = GetOverrideSouceFunc(type, x.SourceAttribute?.PropertyName)
-                })
-                .ToList();
+            var mappings = NpgsqlHelper.GetMetadata(context, type);
 
-            mappings.ForEach(x => x.NpgsqlType = GetNpgsqlType(x.ColumnInfo));
-
+            mappings.ForEach(x =>
+            {
+                var sourceAttribute = x.Property.GetCustomAttribute<BulkMappingSourceAttribute>();
+                x.OverrideSourceMethod = GetOverrideSouceFunc(type, sourceAttribute?.PropertyName);
+                x.NpgsqlType = GetNpgsqlType(x.ColumnInfo);
+                x.TempAliasedColumnName = $"{x.TableName}_{x.ColumnInfo.ColumnName}".ToLower();
+                x.QualifiedColumnName = $"{NpgsqlHelper.GetQualifiedName(x.TableName)}.{NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName)}";
+            });
             return mappings;
         }
 
@@ -299,17 +302,95 @@ namespace Npgsql.Bulk
         private EntityInfo CreateEntityInfo<T>()
         {
             var t = typeof(T);
+            var tableName = GetTableName(t);
+            var mappingInfo = GetMappingInfo(t, tableName);
 
             var info = new EntityInfo()
             {
                 TableNameQualified = GetTableNameQualified(t),
-                TableName = GetTableName(t)
+                TableName = tableName,
+                CodeBuilder = new NpgsqlBulkCodeBuilder<T>(),
+                MappingInfos = mappingInfo,
+                TableNames = mappingInfo.Select(x => x.TableName).Distinct().ToArray(),
+                ClientDataInfos = mappingInfo.Where(x => !x.IsDbGenerated).ToArray(),
+                ClientDataWithKeysInfos = mappingInfo.Where(x => !x.IsDbGenerated || x.IsKey).ToArray()
             };
 
-            info.MappingInfos = new Lazy<List<MappingInfo>>(
-                () => GetMappingInfo(t, info.TableName));
+            var grouppedByTables = mappingInfo.GroupBy(x => x.TableName)
+                .Select(x => new
+                {
+                    TableName = x.Key,
+                    KeyInfos = x.Where(y => y.IsKey).ToList(),
+                    ClientDataInfos = x.Where(y => !y.IsDbGenerated).ToList(),
+                    ReturningInfos = x.Where(y => y.IsDbGenerated).ToList()
+                }).ToList();
 
-            info.CodeBuilder = new NpgsqlBulkCodeBuilder<T>();
+            info.InsertQueryParts = grouppedByTables.Select(x =>
+            {
+                var others = grouppedByTables.Where(y => y.TableName != x.TableName)
+                    .SelectMany(y => y.ClientDataInfos)
+                    .Select(y => new
+                    {
+                        My = y,
+                        Others = x.ReturningInfos.FirstOrDefault(ri => ri.Property.Name == y.Property.Name)
+                    })
+                    .Where(y => y.Others != null)
+                    .ToList();
+
+                return new InsertQueryParts()
+                {
+                    TableName = x.TableName,
+                    TargetColumnNamesQueryPart = string.Join(", ", x.ClientDataInfos.Select(y => y.ColumnInfo.ColumnName)),
+                    SourceColumnNamesQueryPart = string.Join(", ", x.ClientDataInfos.Select(y => y.TempAliasedColumnName)),
+                    Returning = string.Join(", ", x.ReturningInfos.Select(y => y.ColumnInfo.ColumnName)),
+                    ReturningSetQueryPart = string.Join(", ", others.Select(y => $"{y.My.TempAliasedColumnName} = source.{y.Others.ColumnInfo.ColumnName}"))
+                };
+            }).ToList();
+
+            info.SelectSourceForInsertQuery = "SELECT " +
+                string.Join(", ", info.ClientDataInfos
+                    .Select(x => $"{x.QualifiedColumnName} AS {x.TempAliasedColumnName}")) +
+                " FROM " + string.Join(", ", grouppedByTables.Select(x => x.TableName));
+            info.CopyColumnsForInsertQueryPart = string.Join(", ", info.ClientDataInfos
+                .Select(x => x.TempAliasedColumnName));
+
+            info.UpdateQueryParts = grouppedByTables.Select(x =>
+            new UpdateQueryParts()
+            {
+                TableName = x.TableName,
+                SetClause = string.Join(", ", x.ClientDataInfos.Select(y =>
+                {
+                    var colName = NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName);
+                    return $"{colName} = source.{y.TempAliasedColumnName}";
+                })),
+                WhereClause = string.Join(", ", x.KeyInfos.Select(y =>
+                {
+                    var colName = NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName);
+                    return $"{colName} = source.{y.TempAliasedColumnName}";
+                }))
+            }).ToList();
+
+            info.SelectSourceForUpdateQuery = "SELECT " +
+                string.Join(", ", info.ClientDataWithKeysInfos
+                    .Select(x => $"{x.QualifiedColumnName} AS {x.TempAliasedColumnName}")) +
+                " FROM " + string.Join(", ", grouppedByTables.Select(x => x.TableName));
+            info.CopyColumnsForUpdateQueryPart = string.Join(", ", info.ClientDataWithKeysInfos
+                .Select(x => x.TempAliasedColumnName));
+
+            info.ClientDataColumnNames = string.Join(", ",
+                info.ClientDataInfos.Select(x => NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName)));
+
+            info.KeyInfos = info.MappingInfos.Where(x => x.IsKey).ToArray();
+
+            info.KeyColumnNames = info.KeyInfos.Select(x => x.ColumnInfo.ColumnName).ToArray();
+
+            info.ClientDataWithKeysColumnNames = string.Join(", ",
+                info.ClientDataWithKeysInfos.Select(x => NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName)));
+
+            info.DbGeneratedInfos = info.MappingInfos.Where(x => x.IsDbGenerated).ToArray();
+
+            info.DbGeneratedColumnNames = string.Join(", ",
+                info.DbGeneratedInfos.Select(x => NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName)));
 
             return info;
         }

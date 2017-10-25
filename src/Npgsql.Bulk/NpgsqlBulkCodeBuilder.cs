@@ -25,7 +25,7 @@ namespace Npgsql.Bulk
 
         public Action<T, NpgsqlBinaryImporter> ClientDataWriterAction { get; private set; }
         public Action<T, NpgsqlBinaryImporter> ClientDataWithKeyWriterAction { get; private set; }
-        public Action<T, NpgsqlDataReader> IdentityValuesWriterAction { get; private set; }
+        public Dictionary<string, Action<T, NpgsqlDataReader>> IdentityValuesWriterActions { get; private set; }
 
         public void InitBuilder(MappingInfo[] clientDataInfos,
             MappingInfo[] clientDataWithKeyInfos,
@@ -51,9 +51,14 @@ namespace Npgsql.Bulk
             MappingInfo[] identityMappingInfos,
             Func<Type, NpgsqlDataReader, string, object> readerFunc)
         {
+            var identByTableName = identityMappingInfos.GroupBy(x => x.TableName).ToList();
+
             CreateWriterMethod("ClientDataWriter", clientDataInfos);
             CreateWriterMethod("ClientDataWithKeyWriter", clientDataWithKeyInfos);
-            CreateReaderMethod("IdentityValuesWriter", identityMappingInfos, readerFunc);
+
+            foreach (var byTableName in identByTableName)
+                CreateReaderMethod($"IdentityValuesWriter_{byTableName.Key}", byTableName.ToArray(), readerFunc);
+
 
 #if NETSTANDARD1_5 || NETSTANDARD2_0
             generatedType = typeBuilder.CreateTypeInfo().AsType();
@@ -65,8 +70,12 @@ namespace Npgsql.Bulk
                 .CreateDelegate(typeof(Action<T, NpgsqlBinaryImporter>));
             ClientDataWithKeyWriterAction = (Action<T, NpgsqlBinaryImporter>)generatedType.GetMethod("ClientDataWithKeyWriter")
                 .CreateDelegate(typeof(Action<T, NpgsqlBinaryImporter>));
-            IdentityValuesWriterAction = (Action<T, NpgsqlDataReader>)generatedType.GetMethod("IdentityValuesWriter")
-                .CreateDelegate(typeof(Action<T, NpgsqlDataReader>));
+            IdentityValuesWriterActions = new Dictionary<string, Action<T, NpgsqlDataReader>>();
+
+            foreach (var byTableName in identByTableName)
+                IdentityValuesWriterActions[byTableName.Key] =
+                    (Action<T, NpgsqlDataReader>)generatedType.GetMethod($"IdentityValuesWriter_{byTableName.Key}")
+                        .CreateDelegate(typeof(Action<T, NpgsqlDataReader>));
 
             IsInitialized = true;
         }

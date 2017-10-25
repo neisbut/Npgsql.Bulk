@@ -18,10 +18,10 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
             optionsBuilder.UseNpgsql("server=localhost;user id=postgres;password=qwerty;database=copy");
 
             var context = new BulkContext(optionsBuilder.Options);
-            context.Database.ExecuteSqlCommand("DELETE FROM addresses");
-
+            context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
+            
             var data = Enumerable.Range(0, 100000)
-                .Select((x, i) => new Address()
+                .Select((x, i) => new Address2()
                 {
                     StreetName = streets[i % streets.Length],
                     HouseNumber = i + 1,
@@ -31,7 +31,6 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 
             var uploader = new NpgsqlBulkUploader(context);
 
-            context.Database.ExecuteSqlCommand("DELETE FROM addresses");
             var sw = Stopwatch.StartNew();
             uploader.Insert(data);
             sw.Stop();

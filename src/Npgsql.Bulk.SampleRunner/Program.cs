@@ -11,12 +11,25 @@ namespace Npgsql.Bulk
     {
         static void Main()
         {
+            Console.WriteLine("Trying plain case...");
+            TestPlainCase();
+            Console.WriteLine();
+            Console.WriteLine("Trying inheritance case...");
+            TestInheritanceCase();
+
+            Console.WriteLine();
+            Console.WriteLine("Press enter to exit");
+            Console.ReadLine();
+        }
+
+        static void TestPlainCase()
+        {
             var streets = new[] { "First", "Second", "Third" };
             var codes = new[] { "001001", "002002", "003003", "004004" };
             var extraNumbers = new int?[] { null, 1, 2, 3, 5, 8, 13, 21, 34 };
 
             var context = new BulkContext("DefaultConnection");
-            context.Database.ExecuteSqlCommand("DELETE FROM addresses");
+            context.Database.ExecuteSqlCommand("TRUNCATE addresses cascade");
 
             var data = Enumerable.Range(0, 100000)
                 .Select((x, i) => new Address()
@@ -47,8 +60,41 @@ namespace Npgsql.Bulk
             uploader.Update(data);
             sw.Stop();
             Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed }");
+        }
 
-            Console.ReadLine();
+        static void TestInheritanceCase()
+        {
+            var streets = new[] { "First", "Second", "Third" };
+            var codes = new[] { "001001", "002002", "003003", "004004" };
+            var extraNumbers = new int?[] { null, 1, 2, 3, 5, 8, 13, 21, 34 };
+
+            var context = new BulkContext("DefaultConnection");
+            context.Database.ExecuteSqlCommand("DELETE FROM addresses2");
+
+            var data = Enumerable.Range(0, 100000)
+                .Select((x, i) => new Address2()
+                {
+                    StreetName = streets[i % streets.Length],
+                    HouseNumber = i + 1,
+                    PostalCode = codes[i % codes.Length],
+                    ExtraHouseNumber = extraNumbers[i % extraNumbers.Length],
+                    LocalizedName = streets[i % streets.Length]
+                }).ToList();
+
+            var uploader = new NpgsqlBulkUploader(context);
+
+            context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
+            var sw = Stopwatch.StartNew();
+            uploader.Insert(data);
+            sw.Stop();
+            Console.WriteLine($"Dynamic solution inserted {data.Count} records for {sw.Elapsed }");
+
+            data.ForEach(x => x.HouseNumber += 1);
+
+            sw = Stopwatch.StartNew();
+            uploader.Update(data);
+            sw.Stop();
+            Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed }");
         }
 
         static void HardcodedInsert(List<Address> addresses, DbContext context)

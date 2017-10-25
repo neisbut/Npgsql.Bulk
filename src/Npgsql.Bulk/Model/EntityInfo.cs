@@ -6,83 +6,41 @@ namespace Npgsql.Bulk.Model
 {
     internal class EntityInfo
     {
-        Lazy<List<MappingInfo>> mappingInfos;
-
         public string TableName { get; set; }
 
         public string TableNameQualified { get; set; }
 
-        public Lazy<List<MappingInfo>> MappingInfos
-        {
-            get
-            {
-                return mappingInfos;
-            }
-            set
-            {
-                mappingInfos = value;
+        public string[] TableNames { get; internal set; }
 
-                ClientDataInfos = new Lazy<MappingInfo[]>(
-                    () => MappingInfos.Value.Where(x => !x.IsDbGenerated).ToArray());
+        public List<MappingInfo> MappingInfos { get; set; }
 
-                ClientDataColumnNames = new Lazy<string>(() => string.Join(", ",
-                    ClientDataInfos.Value.Select(x => NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName))));
+        public string SelectSourceForInsertQuery { get; set; }
 
-                KeyInfos = new Lazy<MappingInfo[]>(
-                    () => MappingInfos.Value.Where(x => x.IsKey).ToArray());
+        public string CopyColumnsForInsertQueryPart { get; set; }
 
-                KeyColumnNames = new Lazy<string[]>(
-                    () => KeyInfos.Value.Select(x => x.ColumnInfo.ColumnName).ToArray());
+        public string SelectSourceForUpdateQuery { get; set; }
 
-                ClientDataWithKeysInfos = new Lazy<MappingInfo[]>(
-                    () => MappingInfos.Value.Where(x => !x.IsDbGenerated || x.IsKey).ToArray());
+        public string CopyColumnsForUpdateQueryPart { get; set; }
 
-                ClientDataWithKeysColumnNames = new Lazy<string>(() => string.Join(", ",
-                    ClientDataWithKeysInfos.Value.Select(x => NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName))));
+        public List<InsertQueryParts> InsertQueryParts { get; set; }
 
-                DbGeneratedInfos = new Lazy<MappingInfo[]>(
-                    () => MappingInfos.Value.Where(x => x.IsDbGenerated).ToArray());
+        public List<UpdateQueryParts> UpdateQueryParts { get; set; }
 
-                DbGeneratedColumnNames = new Lazy<string>(() => string.Join(", ",
-                    DbGeneratedInfos.Value.Select(x => NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName))));
+        public MappingInfo[] DbGeneratedInfos { get; set; }
 
-                SetClause = new Lazy<string>(
-                    () => string.Join(", ", ClientDataInfos.Value.Select(
-                        x =>
-                        {
-                            var colName = NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName);
-                            return $"{colName} = source.{colName}";
-                        })));
+        public MappingInfo[] ClientDataInfos { get; set; }
 
-                WhereClause = new Lazy<string>(
-                    () => string.Join(", ", KeyInfos.Value.Select(
-                        x =>
-                        {
-                            var colName = NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName);
-                            return $"{TableNameQualified}.{colName} = source.{colName}";
-                        })));
-            }
-        }
+        public MappingInfo[] ClientDataWithKeysInfos { get; set; }
 
-        public Lazy<MappingInfo[]> DbGeneratedInfos { get; private set; }
+        public MappingInfo[] KeyInfos { get; set; }
 
-        public Lazy<MappingInfo[]> ClientDataInfos { get; private set; }
+        public string ClientDataColumnNames { get; set; }
 
-        public Lazy<MappingInfo[]> ClientDataWithKeysInfos { get; private set; }
+        public string ClientDataWithKeysColumnNames { get; set; }
 
-        public Lazy<MappingInfo[]> KeyInfos { get; private set; }
+        public string DbGeneratedColumnNames { get; set; }
 
-        public Lazy<string> ClientDataColumnNames { get; private set; }
-
-        public Lazy<string> ClientDataWithKeysColumnNames { get; private set; }
-
-        public Lazy<string> DbGeneratedColumnNames { get; private set; }
-
-        public Lazy<string[]> KeyColumnNames { get; private set; }
-
-        public Lazy<string> SetClause { get; private set; }
-
-        public Lazy<string> WhereClause { get; private set; }
+        public string[] KeyColumnNames { get; set; }
 
         public object CodeBuilder { get; set; }
     }

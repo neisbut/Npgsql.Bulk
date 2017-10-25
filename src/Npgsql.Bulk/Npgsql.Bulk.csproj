@@ -69,6 +69,8 @@
     <Compile Include="BulkMappingSourceAttribute.cs" />
     <Compile Include="Model\ColumnInfo.cs" />
     <Compile Include="Model\EntityInfo.cs" />
+    <Compile Include="Model\UpdateQueryParts.cs" />
+    <Compile Include="Model\InsertQueryParts.cs" />
     <Compile Include="Model\MappingInfo.cs" />
     <Compile Include="NpgsqlBulkCodeBuilder.cs" />
     <Compile Include="NpgsqlBulkUploader.cs" />

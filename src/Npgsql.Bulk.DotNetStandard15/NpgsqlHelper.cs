@@ -1,11 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql.Bulk.Model;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Data;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 
 namespace Npgsql.Bulk
 {
@@ -40,12 +42,15 @@ namespace Npgsql.Bulk
             var param = new NpgsqlParameter("@tableName", tableName);
 
             var conn = GetNpgsqlConnection(context);
-            using(var cmd = conn.CreateCommand())
+            if (conn.State != ConnectionState.Open)
+                conn.Open();
+
+            using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText = sql;
                 cmd.Parameters.Add(param);
                 var result = new List<ColumnInfo>();
-                using(var reader = cmd.ExecuteReader())
+                using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
@@ -60,5 +65,38 @@ namespace Npgsql.Bulk
                 return result;
             }
         }
+
+        internal static List<MappingInfo> GetMetadata(DbContext context, Type type)
+        {
+            var metadata = context.Model;
+            var entityType = metadata.GetEntityTypes().Single(x => x.ClrType == type);
+
+            var tableName = type.GetCustomAttribute<TableAttribute>().Name;
+            var columnsInfo = GetColumnsInfo(context, tableName);
+            if (entityType.BaseType != null)
+            {
+                var baseTableName = entityType.BaseType.ClrType.GetCustomAttribute<TableAttribute>().Name;
+                var extraColumnsInfo = GetColumnsInfo(context, baseTableName);
+                columnsInfo.AddRange(extraColumnsInfo);
+            }
+
+            var innerList = entityType.GetProperties()
+                .Where(x => x.PropertyInfo != null)
+                .Select(x =>
+                {
+                    return new MappingInfo()
+                    {
+                        TableName = x.DeclaringEntityType.Relational().TableName,
+                        Property = x.PropertyInfo,
+                        ColumnInfo = columnsInfo.First(c => c.ColumnName == x.Relational().ColumnName),
+                        IsDbGenerated = x.ValueGenerated != ValueGenerated.Never,
+                        IsKey = x.IsKey(),
+                        IsInheritanceUsed = entityType.BaseType != null
+                    };
+                }).ToList();
+
+            return innerList;
+        }
+
     }
 }
