@@ -30,7 +30,7 @@ namespace Npgsql.Bulk
             this.context = context;
         }
 
-        private NpgsqlDbType GetNpgsqlType(ColumnInfo info)
+        internal static NpgsqlDbType GetNpgsqlType(ColumnInfo info)
         {
             switch (info.ColumnType)
             {

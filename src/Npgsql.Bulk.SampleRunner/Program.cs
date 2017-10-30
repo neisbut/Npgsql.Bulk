@@ -16,8 +16,11 @@ namespace Npgsql.Bulk
             Console.WriteLine();
             Console.WriteLine("Trying inheritance case...");
             TestInheritanceCase();
-
             Console.WriteLine();
+
+            Console.WriteLine("Trying BulkSelect case...");
+            TestBulkWhere();
+
             Console.WriteLine("Press enter to exit");
             Console.ReadLine();
         }
@@ -95,6 +98,70 @@ namespace Npgsql.Bulk
             uploader.Update(data);
             sw.Stop();
             Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed }");
+        }
+
+        static void TestBulkWhere()
+        {
+            var context = new BulkContext("DefaultConnection");
+
+            var baseQuery = context.Addresses2
+                .Select(x => new { StreetName = x.StreetName, x.HouseNumber, x.CreatedAt });
+            var queries = baseQuery.Take(50000).Select(x => new { StreetName = x.StreetName, x.HouseNumber }).ToList();
+
+            // Filter by unique subcollections
+            var sw = Stopwatch.StartNew();
+            var uniqueStreetname = queries.Select(x => x.StreetName).Distinct().ToList();
+            var uniqueHouseNumbers = queries.Select(x => x.HouseNumber).Distinct().ToList();
+            var result = baseQuery.Where(x => uniqueStreetname.Contains(x.StreetName) &&
+                uniqueHouseNumbers.Contains(x.HouseNumber)).ToList();
+
+            result = (from r in result
+                      join q in queries on new { r.StreetName, r.HouseNumber } equals new { q.StreetName, q.HouseNumber }
+                      select r).ToList();
+
+            sw.Stop();
+            Console.WriteLine($"Filter by unique collections method extracted {result.Count} records for {sw.Elapsed }");
+            Console.WriteLine();
+
+            // Union approach
+            sw = Stopwatch.StartNew();
+            var currentQuery = queries[0];
+            var query = baseQuery.Where(x => x.StreetName == currentQuery.StreetName &&
+                x.HouseNumber == currentQuery.HouseNumber);
+            for (var i = 1; i < 100; i++)
+            {
+                var cq = queries[i];
+                query = query.Union(baseQuery.Where(x => x.StreetName == cq.StreetName &&
+                    x.HouseNumber == cq.HouseNumber));
+            }
+            result = query.ToList();
+            sw.Stop();
+            Console.WriteLine($"Union extracted {result.Count} records for {sw.Elapsed }");
+            Console.WriteLine();
+
+            // Bulk Select approach
+            sw = Stopwatch.StartNew();
+            result = baseQuery.BulkSelect(x => new { x.StreetName, x.HouseNumber }, queries);
+            sw.Stop();
+            Console.WriteLine($"BulkSelect extracted {result.Count} records for {sw.Elapsed }");
+            Console.WriteLine();
+
+            // Bulk Select (Contains) approach
+            sw = Stopwatch.StartNew();
+            result = baseQuery.BulkSelect(x => new { x.HouseNumber },
+                queries.Select(x => new { x.HouseNumber }).Distinct().ToList());
+            sw.Stop();
+            Console.WriteLine($"BulkSelect (Contains) extracted {result.Count} records for {sw.Elapsed }");
+            Console.WriteLine();
+        }
+
+        class BulkSelect
+        {
+            public string StreetName { get; set; }
+
+            public int NumberFrom { get; set; }
+
+            public int NumberTo { get; set; }
         }
 
         static void HardcodedInsert(List<Address> addresses, DbContext context)

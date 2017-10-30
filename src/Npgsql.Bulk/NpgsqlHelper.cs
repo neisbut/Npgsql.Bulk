@@ -5,9 +5,11 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity;
 using System.Data.Entity.Core.Mapping;
 using System.Data.Entity.Core.Metadata.Edm;
+using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
 using System.Data.Entity.ModelConfiguration.Configuration;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,6 +21,17 @@ namespace Npgsql.Bulk
     /// </summary>
     internal static class NpgsqlHelper
     {
+        internal static DbContext GetContextFromQuery(IQueryable query)
+        {
+            var mc1 = (MethodCallExpression)query.Expression;
+            var mc2 = (MethodCallExpression)mc1.Arguments[0];
+            var c = (ConstantExpression)mc2.Object;
+            var oq = (ObjectQuery)c.Value;
+            var dc = oq.Context.InterceptionContext.DbContexts.First();
+
+            return dc;
+        }
+
         internal static string GetQualifiedName(string name, string prefix = null)
         {
             return $"{(prefix == null ? "" : "\"" + prefix + "\".")}\"{name}\"";
@@ -64,7 +77,7 @@ namespace Npgsql.Bulk
                         return new MappingInfo()
                         {
                             TableName = tableName,
-                            Property = type.GetProperty(x.Property.Name, 
+                            Property = type.GetProperty(x.Property.Name,
                                 BindingFlags.NonPublic | BindingFlags.Public |
                                 BindingFlags.GetProperty | BindingFlags.Instance),
                             ColumnInfo = columnsInfo.First(c => c.ColumnName == x.Column.Name),

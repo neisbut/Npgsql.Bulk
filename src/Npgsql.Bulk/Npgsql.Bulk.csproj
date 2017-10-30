@@ -67,6 +67,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BulkMappingSourceAttribute.cs" />
+    <Compile Include="BulkQueryableExtension.cs" />
+    <Compile Include="BulkSelectInterceptor.cs" />
     <Compile Include="Model\ColumnInfo.cs" />
     <Compile Include="Model\EntityInfo.cs" />
     <Compile Include="Model\UpdateQueryParts.cs" />
