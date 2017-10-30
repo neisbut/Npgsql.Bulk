@@ -6,8 +6,11 @@ Helper for performing COPY (bulk insert and update) operation easily, using Enti
 ```c#
 var uploader = new NpgsqlBulkUploader(context);
 var data = GetALotOfData();
+
+// To create a lot of objects
 uploader.Insert(data);
-// OR
+
+// To update a lot of objects
 uploader.Update(data);
 ```
     
