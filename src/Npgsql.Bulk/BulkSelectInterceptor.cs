@@ -31,7 +31,8 @@ namespace Npgsql.Bulk
 
             if (!IsInterceptionEnabled)
             {
-                ReplaceDictionary.Clear();
+                if (ReplaceDictionary.Any())
+                    throw new InvalidOperationException("It seems BulkSelectInterceptor is not installed.");
             }
         }
 
