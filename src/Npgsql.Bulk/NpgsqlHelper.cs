@@ -23,13 +23,14 @@ namespace Npgsql.Bulk
     {
         internal static DbContext GetContextFromQuery(IQueryable query)
         {
-            var mc1 = (MethodCallExpression)query.Expression;
-            var mc2 = (MethodCallExpression)mc1.Arguments[0];
-            var c = (ConstantExpression)mc2.Object;
-            var oq = (ObjectQuery)c.Value;
-            var dc = oq.Context.InterceptionContext.DbContexts.First();
+            var intQueryProp = query.GetType().GetProperty(
+                "InternalQuery", BindingFlags.Instance | BindingFlags.NonPublic);
+            var intQuery = intQueryProp.GetValue(query);
+            var objQueryProp = intQuery.GetType().GetProperty(
+                "ObjectQuery", BindingFlags.Instance | BindingFlags.Public);
+            var objQuery = (ObjectQuery)objQueryProp.GetValue(intQuery);
 
-            return dc;
+            return objQuery.Context.InterceptionContext.DbContexts.First();
         }
 
         internal static string GetQualifiedName(string name, string prefix = null)
@@ -54,7 +55,8 @@ namespace Npgsql.Bulk
             var sql = @"
                     SELECT column_name as ColumnName, udt_name as ColumnType, data_type as ColumnTypeExtra, (column_default IS NOT NULL) as HasDefault 
                     FROM information_schema.columns
-                    WHERE table_name = @tableName";
+                    WHERE table_name = @tableName
+                    ORDER BY ordinal_position";
             var param = new NpgsqlParameter("@tableName", tableName);
 
             return context.Database.SqlQuery<ColumnInfo>(sql, param).ToList();

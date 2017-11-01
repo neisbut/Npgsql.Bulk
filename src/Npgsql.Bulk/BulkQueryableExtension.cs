@@ -20,6 +20,8 @@ namespace Npgsql.Bulk
             Expression<Func<T, TKey>> keyExpression,
             IEnumerable<TKey> keyData)
         {
+            EnsureNoNavigationProperties(keyExpression);
+
             BulkSelectInterceptor.StartInterception();
 
             var keyDataTable = $"_schema_{DateTime.Now.Ticks}";
@@ -156,6 +158,32 @@ namespace Npgsql.Bulk
             }
 
             return list;
+        }
+
+        private static void EnsureNoNavigationProperties(LambdaExpression expression)
+        {
+            var body = expression.Body;
+            if (body is NewExpression newExp)
+            {
+                foreach (var arg in newExp.Arguments)
+                {
+                    if (arg is MemberExpression memberExp)
+                    {
+                        if (memberExp.Expression.NodeType != ExpressionType.Parameter)
+                        {
+                            throw new NotSupportedException(
+                                $"Navigation properties are not supported: {memberExp.Expression}");
+                        }
+                    }
+                    else
+                    {
+                        throw new NotSupportedException($"Not supported: {arg.NodeType} in constructor");
+                    }
+                }
+                return;
+            }
+
+            throw new NotSupportedException("This expression type is not supported");
         }
 
     }
