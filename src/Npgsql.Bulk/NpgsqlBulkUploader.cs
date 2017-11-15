@@ -140,6 +140,8 @@ namespace Npgsql.Bulk
 
                 // 1. Create temp table 
                 var sql = $"CREATE TEMP TABLE {tempTableName} ON COMMIT DROP AS {mapping.SelectSourceForInsertQuery} LIMIT 0";
+                //var sql = $"CREATE {tempTableName} AS {mapping.SelectSourceForInsertQuery} LIMIT 0";
+
                 context.Database.ExecuteSqlCommand(sql);
                 context.Database.ExecuteSqlCommand($"ALTER TABLE {tempTableName} ADD COLUMN __index integer");
 
@@ -225,6 +227,7 @@ namespace Npgsql.Bulk
 
                 // 1. Create temp table 
                 var sql = $"CREATE TEMP TABLE {tempTableName} ON COMMIT DROP AS {mapping.SelectSourceForUpdateQuery} LIMIT 0";
+                //var sql = $"CREATE TABLE {tempTableName} AS {mapping.SelectSourceForUpdateQuery} LIMIT 0";
                 context.Database.ExecuteSqlCommand(sql);
 
                 // 2. Import into temp table
@@ -240,11 +243,8 @@ namespace Npgsql.Bulk
                 // 3. Insert into real table from temp one
                 foreach (var part in mapping.UpdateQueryParts)
                 {
-                    using (var cmd = conn.CreateCommand())
-                    {
-                        cmd.CommandText = $"UPDATE {part.TableName} SET {part.SetClause} FROM {tempTableName} as source WHERE {part.WhereClause}";
-                        cmd.ExecuteNonQuery();
-                    }
+                    context.Database.ExecuteSqlCommand(
+                        $"UPDATE {part.TableName} SET {part.SetClause} FROM {tempTableName} as source WHERE {part.WhereClause}");
                 }
 
                 // 5. Commit

@@ -108,6 +108,11 @@ namespace Npgsql.Bulk
                 {
                     ilOut.Emit(OpCodes.Call, writeMethodShort.MakeGenericMethod(mi.ReturnType));
                 }
+                else if(mi.ReturnType.GetTypeInfo().IsEnum)
+                {
+                    ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
+                    ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(typeof(Int32)));
+                }
                 else
                 {
                     ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
