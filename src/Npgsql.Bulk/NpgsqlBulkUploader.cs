@@ -75,6 +75,8 @@ namespace Npgsql.Bulk
                     return NpgsqlDbType.TimestampTZ;
                 case "bpchar":
                     return NpgsqlDbType.Char;
+                case "hstore":
+                    return NpgsqlDbType.Hstore;
                 default:
 
                     if (info.ColumnTypeExtra.Equals("array", StringComparison.OrdinalIgnoreCase))
@@ -276,9 +278,21 @@ namespace Npgsql.Bulk
         {
             if (memberName == null) return null;
 
-            var propInfo = t.GetProperty(memberName);
+            var propInfo = t.GetProperty(memberName, 
+                BindingFlags.Public | BindingFlags.NonPublic |
+                BindingFlags.Instance | BindingFlags.Static);
             if (propInfo != null)
-                return propInfo.GetGetMethod();
+            {
+                if (propInfo.GetGetMethod() != null)
+                {
+                    return propInfo.GetMethod;
+                }
+                else
+                {
+                    return propInfo.GetMethod.CreateDelegate(
+                        typeof(Func<,>).MakeGenericType(t, propInfo.PropertyType)).GetMethodInfo();
+                }
+            }
 
             return null;
         }
