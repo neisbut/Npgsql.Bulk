@@ -22,6 +22,7 @@ namespace Npgsql.Bulk
     public class NpgsqlBulkUploader
     {
         private static readonly ConcurrentDictionary<Type, EntityInfo> Cache = new ConcurrentDictionary<Type, EntityInfo>();
+        private static readonly Dictionary<Type, object> EntityInfoLocks = new Dictionary<Type, object>();
 
         private readonly DbContext context;
 
@@ -134,11 +135,6 @@ namespace Npgsql.Bulk
                 var tempTableName = "_temp_" + DateTime.Now.Ticks;
                 var list = entities.ToList();
                 var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
-                if (!codeBuilder.IsInitialized)
-                    codeBuilder.InitBuilder(mapping.ClientDataInfos,
-                        mapping.ClientDataWithKeysInfos,
-                        mapping.DbGeneratedInfos,
-                        ReadValue);
 
                 // 1. Create temp table 
                 var sql = $"CREATE TEMP TABLE {tempTableName} ON COMMIT DROP AS {mapping.SelectSourceForInsertQuery} LIMIT 0";
@@ -221,11 +217,6 @@ namespace Npgsql.Bulk
                 var tableName = mapping.TableNameQualified;
                 var tempTableName = "_temp_" + DateTime.Now.Ticks;
                 var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
-                if (!codeBuilder.IsInitialized)
-                    codeBuilder.InitBuilder(mapping.ClientDataInfos,
-                        mapping.ClientDataWithKeysInfos,
-                        mapping.DbGeneratedInfos,
-                        ReadValue);
 
                 // 1. Create temp table 
                 var sql = $"CREATE TEMP TABLE {tempTableName} ON COMMIT DROP AS {mapping.SelectSourceForUpdateQuery} LIMIT 0";
@@ -278,7 +269,7 @@ namespace Npgsql.Bulk
         {
             if (memberName == null) return null;
 
-            var propInfo = t.GetProperty(memberName, 
+            var propInfo = t.GetProperty(memberName,
                 BindingFlags.Public | BindingFlags.NonPublic |
                 BindingFlags.Instance | BindingFlags.Static);
             if (propInfo != null)
@@ -310,7 +301,29 @@ namespace Npgsql.Bulk
 
         private EntityInfo GetEntityInfo<T>()
         {
-            return Cache.GetOrAdd(typeof(T), (t) => CreateEntityInfo<T>());
+            var type = typeof(T);
+            if (Cache.TryGetValue(type, out EntityInfo info))
+            {
+                return info;
+            }
+            else
+            {
+                object typeLocker;
+                lock (EntityInfoLocks)
+                {
+                    if (!EntityInfoLocks.TryGetValue(type, out typeLocker))
+                    {
+                        EntityInfoLocks[type] = typeLocker = new object();
+                    }
+                }
+                lock (typeLocker)
+                {
+                    info = Cache.GetOrAdd(type, (x) => CreateEntityInfo<T>());
+                    EntityInfoLocks.Remove(type);
+                }
+
+                return info;
+            }
         }
 
         private EntityInfo CreateEntityInfo<T>()
@@ -318,12 +331,13 @@ namespace Npgsql.Bulk
             var t = typeof(T);
             var tableName = GetTableName(t);
             var mappingInfo = GetMappingInfo(t, tableName);
+            var codeBuilder = new NpgsqlBulkCodeBuilder<T>();
 
             var info = new EntityInfo()
             {
                 TableNameQualified = GetTableNameQualified(t),
                 TableName = tableName,
-                CodeBuilder = new NpgsqlBulkCodeBuilder<T>(),
+                CodeBuilder = codeBuilder,
                 MappingInfos = mappingInfo,
                 TableNames = mappingInfo.Select(x => x.TableName).Distinct().ToArray(),
                 ClientDataInfos = mappingInfo.Where(x => !x.IsDbGenerated).ToArray(),
@@ -405,6 +419,11 @@ namespace Npgsql.Bulk
 
             info.DbGeneratedColumnNames = string.Join(", ",
                 info.DbGeneratedInfos.Select(x => NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName)));
+
+            codeBuilder.InitBuilder(info.ClientDataInfos,
+                info.ClientDataWithKeysInfos,
+                info.DbGeneratedInfos,
+                ReadValue);
 
             return info;
         }
