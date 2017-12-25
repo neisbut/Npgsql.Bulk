@@ -75,9 +75,8 @@ namespace Npgsql.Bulk
                     mapsInfo.Select(x => $"source.{NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName)}" +
                     $" = {keyDataTable}.{NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName)}"));
 
-                var selectSql = $"WITH source AS ({source})\n" +
-                    "SELECT * FROM source\n" +
-                    $"WHERE EXISTS (SELECT * FROM {keyDataTable} WHERE {whereSql})";
+                var selectSql = $"SELECT source.* FROM ({source}) as source\n" +
+                    $"JOIN {keyDataTable} ON {whereSql}";
 
                 BulkSelectInterceptor.SetReplaceQuery(source.ToString(), selectSql);
 
