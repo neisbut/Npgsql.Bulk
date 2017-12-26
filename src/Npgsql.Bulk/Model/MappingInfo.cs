@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using NpgsqlTypes;
 using System;
+using System.Collections.Generic;
 
 namespace Npgsql.Bulk.Model
 {
@@ -25,5 +26,7 @@ namespace Npgsql.Bulk.Model
         public bool IsDbGenerated { get; set; }
 
         public bool IsKey { get; set; }
+
+        public List<BulkOperationModifierAttribute> ModifierAttributes { get; set; }
     }
 }

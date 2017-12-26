@@ -257,6 +257,9 @@ namespace Npgsql.Bulk
             mappings.ForEach(x =>
             {
                 var sourceAttribute = x.Property.GetCustomAttribute<BulkMappingSourceAttribute>();
+                var modifiers = x.Property.GetCustomAttributes<BulkOperationModifierAttribute>();
+
+                x.ModifierAttributes = modifiers.ToList();
                 x.OverrideSourceMethod = GetOverrideSouceFunc(type, sourceAttribute?.PropertyName);
                 x.NpgsqlType = GetNpgsqlType(x.ColumnInfo);
                 x.TempAliasedColumnName = $"{x.TableName}_{x.ColumnInfo.ColumnName}".ToLower();
@@ -383,19 +386,28 @@ namespace Npgsql.Bulk
                 .Select(x => x.TempAliasedColumnName));
 
             info.UpdateQueryParts = grouppedByTables.Select(x =>
-            new UpdateQueryParts()
             {
-                TableName = x.TableName,
-                SetClause = string.Join(", ", x.ClientDataInfos.Select(y =>
+                var updateableInfos = x.ClientDataInfos;
+                updateableInfos = updateableInfos.Where(
+                    y => y.ModifierAttributes == null ||
+                        y.ModifierAttributes.All(
+                            m => m.Modification != BulkOperationModification.IgnoreForUpdate)
+                    ).ToList();
+
+                return new UpdateQueryParts()
                 {
-                    var colName = NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName);
-                    return $"{colName} = source.{y.TempAliasedColumnName}";
-                })),
-                WhereClause = string.Join(", ", x.KeyInfos.Select(y =>
-                {
-                    var colName = NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName);
-                    return $"{colName} = source.{y.TempAliasedColumnName}";
-                }))
+                    TableName = x.TableName,
+                    SetClause = string.Join(", ", updateableInfos.Select(y =>
+                    {
+                        var colName = NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName);
+                        return $"{colName} = source.{y.TempAliasedColumnName}";
+                    })),
+                    WhereClause = string.Join(", ", x.KeyInfos.Select(y =>
+                    {
+                        var colName = NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName);
+                        return $"{colName} = source.{y.TempAliasedColumnName}";
+                    }))
+                };
             }).ToList();
 
             info.SelectSourceForUpdateQuery = "SELECT " +

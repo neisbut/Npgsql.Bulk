@@ -4,12 +4,14 @@
     <TargetFramework>netstandard1.5</TargetFramework>
     <RootNamespace>Npgsql.Bulk</RootNamespace>
     <AssemblyName>Npgsql.Bulk</AssemblyName>
-    <AssemblyVersion>0.5.8.0</AssemblyVersion>
-    <FileVersion>0.5.8.0</FileVersion>
+    <AssemblyVersion>0.5.10.0</AssemblyVersion>
+    <FileVersion>0.5.10.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="..\Npgsql.Bulk\BulkMappingSourceAttribute.cs" Link="BulkMappingSourceAttribute.cs" />
+    <Compile Include="..\Npgsql.Bulk\BulkOperationModification.cs" Link="BulkOperationModification.cs" />
+    <Compile Include="..\Npgsql.Bulk\BulkOperationModifierAttribute.cs" Link="BulkOperationModifierAttribute.cs" />
     <Compile Include="..\Npgsql.Bulk\Model\ColumnInfo.cs" Link="Model\ColumnInfo.cs" />
     <Compile Include="..\Npgsql.Bulk\Model\EntityInfo.cs" Link="Model\EntityInfo.cs" />
     <Compile Include="..\Npgsql.Bulk\Model\InsertQueryParts.cs" Link="Model\InsertQueryParts.cs" />
