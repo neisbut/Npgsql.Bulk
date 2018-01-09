@@ -124,7 +124,7 @@ namespace Npgsql.Bulk
         public void Insert<T>(IEnumerable<T> entities)
         {
             var conn = NpgsqlHelper.GetNpgsqlConnection(context);
-            EnsureConnected(conn);
+            var connOpenedHere = EnsureConnected(conn);
             var transaction = NpgsqlHelper.EnsureOrStartTransaction(context);
 
             var mapping = GetEntityInfo<T>();
@@ -200,12 +200,17 @@ namespace Npgsql.Bulk
                 transaction?.Rollback();
                 throw;
             }
+            finally
+            {
+                if (connOpenedHere)
+                    conn.Close();
+            }
         }
 
         public void Update<T>(IEnumerable<T> entities)
         {
             var conn = NpgsqlHelper.GetNpgsqlConnection(context);
-            EnsureConnected(conn);
+            var connOpenedHere = EnsureConnected(conn);
             var transaction = NpgsqlHelper.EnsureOrStartTransaction(context);
 
             var mapping = GetEntityInfo<T>();
@@ -247,6 +252,11 @@ namespace Npgsql.Bulk
             {
                 transaction?.Rollback();
                 throw;
+            }
+            finally
+            {
+                if (connOpenedHere)
+                    conn.Close();
             }
         }
 
@@ -296,10 +306,14 @@ namespace Npgsql.Bulk
             return NpgsqlHelper.GetColumnsInfo(context, tableName);
         }
 
-        private void EnsureConnected(NpgsqlConnection conn)
+        private bool EnsureConnected(NpgsqlConnection conn)
         {
             if (conn.State != System.Data.ConnectionState.Open)
+            {
                 conn.Open();
+                return true;
+            }
+            return false;
         }
 
         private EntityInfo GetEntityInfo<T>()
