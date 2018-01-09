@@ -79,6 +79,7 @@ namespace Npgsql.Bulk
                         return new MappingInfo()
                         {
                             TableName = tableName,
+                            TableNameQualified = GetQualifiedName(tableName, tableEntitySet.Schema),
                             Property = type.GetProperty(x.Property.Name,
                                 BindingFlags.NonPublic | BindingFlags.Public |
                                 BindingFlags.GetProperty | BindingFlags.Instance),
