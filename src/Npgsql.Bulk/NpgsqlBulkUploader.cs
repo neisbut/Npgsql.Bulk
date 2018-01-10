@@ -242,7 +242,7 @@ namespace Npgsql.Bulk
                 foreach (var part in mapping.UpdateQueryParts)
                 {
                     context.Database.ExecuteSqlCommand(
-                        $"UPDATE {part.TableName} SET {part.SetClause} FROM {tempTableName} as source WHERE {part.WhereClause}");
+                        $"UPDATE {part.TableNameQualified} SET {part.SetClause} FROM {tempTableName} as source WHERE {part.WhereClause}");
                 }
 
                 // 5. Commit
@@ -413,6 +413,7 @@ namespace Npgsql.Bulk
                 return new UpdateQueryParts()
                 {
                     TableName = x.TableName,
+                    TableNameQualified = x.TableNameQualified,
                     SetClause = string.Join(", ", updateableInfos.Select(y =>
                     {
                         var colName = NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName);
@@ -429,7 +430,7 @@ namespace Npgsql.Bulk
             info.SelectSourceForUpdateQuery = "SELECT " +
                 string.Join(", ", info.ClientDataWithKeysInfos
                     .Select(x => $"{x.QualifiedColumnName} AS {x.TempAliasedColumnName}")) +
-                " FROM " + string.Join(", ", grouppedByTables.Select(x => x.TableName));
+                " FROM " + string.Join(", ", grouppedByTables.Select(x => x.TableNameQualified));
             info.CopyColumnsForUpdateQueryPart = string.Join(", ", info.ClientDataWithKeysInfos
                 .Select(x => x.TempAliasedColumnName));
 
