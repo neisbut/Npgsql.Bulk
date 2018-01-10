@@ -161,7 +161,7 @@ namespace Npgsql.Bulk
                 {
                     using (var cmd = conn.CreateCommand())
                     {
-                        var baseInsertCmd = $"INSERT INTO {insertPart.TableName} ({insertPart.TargetColumnNamesQueryPart}) SELECT {insertPart.SourceColumnNamesQueryPart} FROM {tempTableName}";
+                        var baseInsertCmd = $"INSERT INTO {insertPart.TableNameQualified} ({insertPart.TargetColumnNamesQueryPart}) SELECT {insertPart.SourceColumnNamesQueryPart} FROM {tempTableName}";
                         if (string.IsNullOrEmpty(insertPart.ReturningSetQueryPart))
                         {
                             cmd.CommandText = baseInsertCmd;
@@ -242,7 +242,7 @@ namespace Npgsql.Bulk
                 foreach (var part in mapping.UpdateQueryParts)
                 {
                     context.Database.ExecuteSqlCommand(
-                        $"UPDATE {part.TableName} SET {part.SetClause} FROM {tempTableName} as source WHERE {part.WhereClause}");
+                        $"UPDATE {part.TableNameQualified} SET {part.SetClause} FROM {tempTableName} as source WHERE {part.WhereClause}");
                 }
 
                 // 5. Commit
@@ -365,6 +365,7 @@ namespace Npgsql.Bulk
                 .Select(x => new
                 {
                     TableName = x.Key,
+                    x.First().TableNameQualified,
                     KeyInfos = x.Where(y => y.IsKey).ToList(),
                     ClientDataInfos = x.Where(y => !y.IsDbGenerated).ToList(),
                     ReturningInfos = x.Where(y => y.IsDbGenerated).ToList()
@@ -385,7 +386,8 @@ namespace Npgsql.Bulk
                 return new InsertQueryParts()
                 {
                     TableName = x.TableName,
-                    TargetColumnNamesQueryPart = string.Join(", ", x.ClientDataInfos.Select(y => y.ColumnInfo.ColumnName)),
+                    TableNameQualified = x.TableNameQualified,
+                    TargetColumnNamesQueryPart = string.Join(", ", x.ClientDataInfos.Select(y => NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName))),
                     SourceColumnNamesQueryPart = string.Join(", ", x.ClientDataInfos.Select(y => y.TempAliasedColumnName)),
                     Returning = string.Join(", ", x.ReturningInfos.Select(y => y.ColumnInfo.ColumnName)),
                     ReturningSetQueryPart = string.Join(", ", others.Select(y => $"{y.My.TempAliasedColumnName} = source.{y.Others.ColumnInfo.ColumnName}"))
@@ -395,7 +397,7 @@ namespace Npgsql.Bulk
             info.SelectSourceForInsertQuery = "SELECT " +
                 string.Join(", ", info.ClientDataInfos
                     .Select(x => $"{x.QualifiedColumnName} AS {x.TempAliasedColumnName}")) +
-                " FROM " + string.Join(", ", grouppedByTables.Select(x => x.TableName));
+                " FROM " + string.Join(", ", grouppedByTables.Select(x => x.TableNameQualified));
             info.CopyColumnsForInsertQueryPart = string.Join(", ", info.ClientDataInfos
                 .Select(x => x.TempAliasedColumnName));
 
@@ -411,6 +413,7 @@ namespace Npgsql.Bulk
                 return new UpdateQueryParts()
                 {
                     TableName = x.TableName,
+                    TableNameQualified = x.TableNameQualified,
                     SetClause = string.Join(", ", updateableInfos.Select(y =>
                     {
                         var colName = NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName);
@@ -427,7 +430,7 @@ namespace Npgsql.Bulk
             info.SelectSourceForUpdateQuery = "SELECT " +
                 string.Join(", ", info.ClientDataWithKeysInfos
                     .Select(x => $"{x.QualifiedColumnName} AS {x.TempAliasedColumnName}")) +
-                " FROM " + string.Join(", ", grouppedByTables.Select(x => x.TableName));
+                " FROM " + string.Join(", ", grouppedByTables.Select(x => x.TableNameQualified));
             info.CopyColumnsForUpdateQueryPart = string.Join(", ", info.ClientDataWithKeysInfos
                 .Select(x => x.TempAliasedColumnName));
 

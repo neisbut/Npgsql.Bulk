@@ -10,6 +10,8 @@ namespace Npgsql.Bulk.Model
     {
         public string TableName { get; set; }
 
+        public string TableNameQualified { get; set; }
+
         public string SetClause { get; set; }
 
         public string WhereClause { get; set; }
