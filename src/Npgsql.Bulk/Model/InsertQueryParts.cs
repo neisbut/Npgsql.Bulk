@@ -11,6 +11,8 @@ namespace Npgsql.Bulk.Model
 
         public string TableName { get; set; }
 
+        public string TableNameQualified { get; set; }
+
         public string TargetColumnNamesQueryPart { get; set; }
 
         public string SourceColumnNamesQueryPart { get; set; }
