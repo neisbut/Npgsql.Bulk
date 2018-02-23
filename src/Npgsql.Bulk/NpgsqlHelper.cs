@@ -92,10 +92,25 @@ namespace Npgsql.Bulk
             return innerList;
         }
 
+        internal static EntitySetBase GetEntitySet(DbContext context, Type type)
+        {
+            var metadata = ((IObjectContextAdapter)context).ObjectContext.MetadataWorkspace;
+            string baseTypeName = type.BaseType.Name;
+            string typeName = type.Name;
+
+            var es = metadata
+                    .GetItemCollection(DataSpace.SSpace)
+                    .GetItems<EntityContainer>()
+                    .SelectMany(c => c.BaseEntitySets
+                        .Where(e => e.Name == typeName || e.Name == baseTypeName))
+                    .FirstOrDefault();
+
+            return es;
+        }
+
         internal static List<MappingInfo> GetMetadata(DbContext context, Type type)
         {
             var metadata = ((IObjectContextAdapter)context).ObjectContext.MetadataWorkspace;
-
             var objectItemCollection = ((ObjectItemCollection)metadata.GetItemCollection(DataSpace.OSpace));
 
             // Get the entity type from the model that maps to the CLR type
@@ -104,6 +119,7 @@ namespace Npgsql.Bulk
 
             var sets = metadata.GetItems<EntityContainer>(DataSpace.CSpace).Single().EntitySets;
             var entitySet = sets.SingleOrDefault(s => s.ElementType.Name == entityType.Name);
+
             var mappings = metadata.GetItems<EntityContainerMapping>(DataSpace.CSSpace).Single().EntitySetMappings;
 
             if (entitySet != null)
@@ -142,6 +158,18 @@ namespace Npgsql.Bulk
                 }
 
             }
+        }
+
+        internal static string GetTableName(DbContext context, Type t)
+        {
+            var entityType = GetEntitySet(context, t);
+            return entityType.Table;
+        }
+
+        internal static string GetTableNameQualified(DbContext context, Type t)
+        {
+            var entityType = GetEntitySet(context, t);
+            return GetQualifiedName(entityType.Table, entityType.Schema);
         }
     }
 }

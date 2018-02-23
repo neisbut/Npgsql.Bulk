@@ -141,7 +141,8 @@ namespace Npgsql.Bulk
                 //var sql = $"CREATE {tempTableName} AS {mapping.SelectSourceForInsertQuery} LIMIT 0";
 
                 context.Database.ExecuteSqlCommand(sql);
-                context.Database.ExecuteSqlCommand($"ALTER TABLE {tempTableName} ADD COLUMN __index integer");
+                sql = $"ALTER TABLE {tempTableName} ADD COLUMN __index integer";
+                context.Database.ExecuteSqlCommand(sql);
 
                 // 2. Import into temp table
                 using (var importer = conn.BeginBinaryImport($"COPY {tempTableName} ({mapping.CopyColumnsForInsertQueryPart}, __index) FROM STDIN (FORMAT BINARY)"))
@@ -241,8 +242,8 @@ namespace Npgsql.Bulk
                 // 3. Insert into real table from temp one
                 foreach (var part in mapping.UpdateQueryParts)
                 {
-                    context.Database.ExecuteSqlCommand(
-                        $"UPDATE {part.TableNameQualified} SET {part.SetClause} FROM {tempTableName} as source WHERE {part.WhereClause}");
+                    sql = $"UPDATE {part.TableNameQualified} SET {part.SetClause} FROM {tempTableName} as source WHERE {part.WhereClause}";
+                    context.Database.ExecuteSqlCommand(sql);
                 }
 
                 // 5. Commit
@@ -346,13 +347,13 @@ namespace Npgsql.Bulk
         private EntityInfo CreateEntityInfo<T>()
         {
             var t = typeof(T);
-            var tableName = GetTableName(t);
+            var tableName = NpgsqlHelper.GetTableName(context, t);
             var mappingInfo = GetMappingInfo(t, tableName);
             var codeBuilder = new NpgsqlBulkCodeBuilder<T>();
 
             var info = new EntityInfo()
             {
-                TableNameQualified = GetTableNameQualified(t),
+                TableNameQualified = NpgsqlHelper.GetTableNameQualified(context, t),
                 TableName = tableName,
                 CodeBuilder = codeBuilder,
                 MappingInfos = mappingInfo,
@@ -456,19 +457,6 @@ namespace Npgsql.Bulk
 
             return info;
         }
-
-        private string GetTableName(Type t)
-        {
-            var tableAttr = t.GetCustomAttribute<TableAttribute>();
-            return tableAttr.Name;
-        }
-
-        private string GetTableNameQualified(Type t)
-        {
-            var tableAttr = t.GetCustomAttribute<TableAttribute>();
-            return NpgsqlHelper.GetQualifiedName(tableAttr.Name, tableAttr.Schema);
-        }
-
     }
 }
 

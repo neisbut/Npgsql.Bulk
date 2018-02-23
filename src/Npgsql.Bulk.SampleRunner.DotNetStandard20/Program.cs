@@ -21,7 +21,7 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
             context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
             
             var data = Enumerable.Range(0, 100000)
-                .Select((x, i) => new Address2()
+                .Select((x, i) => new Address()
                 {
                     StreetName = streets[i % streets.Length],
                     HouseNumber = i + 1,

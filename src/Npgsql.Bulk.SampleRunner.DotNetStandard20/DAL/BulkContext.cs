@@ -14,7 +14,7 @@ namespace Npgsql.Bulk.DAL
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Address2>().Property(x => x.AddressId).HasColumnName("base_address_id");
+            //modelBuilder.Entity<Address2>().Property(x => x.AddressId).HasColumnName("base_address_id");
         }
     }
 }
