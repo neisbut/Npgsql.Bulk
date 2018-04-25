@@ -66,6 +66,7 @@ namespace Npgsql.Bulk
                     return NpgsqlDbType.Time;
                 case "date":
                     return NpgsqlDbType.Date;
+                case "int2":
                 case "smallint":
                     return NpgsqlDbType.Smallint;
                 case "uuid":
