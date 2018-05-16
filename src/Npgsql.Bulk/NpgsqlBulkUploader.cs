@@ -421,7 +421,7 @@ namespace Npgsql.Bulk
                         var colName = NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName);
                         return $"{colName} = source.{y.TempAliasedColumnName}";
                     })),
-                    WhereClause = string.Join(", ", x.KeyInfos.Select(y =>
+                    WhereClause = string.Join(" and ", x.KeyInfos.Select(y =>
                     {
                         var colName = NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName);
                         return $"{colName} = source.{y.TempAliasedColumnName}";
