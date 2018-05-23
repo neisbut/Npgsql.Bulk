@@ -79,12 +79,16 @@ namespace Npgsql.Bulk
                     return NpgsqlDbType.Char;
                 case "hstore":
                     return NpgsqlDbType.Hstore;
+                case "json":
+                    return NpgsqlDbType.Json;
+                case "jsonb":
+                    return NpgsqlDbType.Jsonb;
                 default:
 
                     if (info.ColumnTypeExtra.Equals("array", StringComparison.OrdinalIgnoreCase))
                         return NpgsqlDbType.Array;
 
-                    throw new NotImplementedException();
+                    throw new NotImplementedException($"Column type '{info.ColumnType}' is not supported");
             }
         }
 
