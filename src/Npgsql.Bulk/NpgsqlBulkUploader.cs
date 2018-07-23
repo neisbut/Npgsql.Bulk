@@ -394,9 +394,10 @@ namespace Npgsql.Bulk
                     TableName = x.TableName,
                     TableNameQualified = x.TableNameQualified,
                     TargetColumnNamesQueryPart = string.Join(", ", x.ClientDataInfos.Select(y => NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName))),
-                    SourceColumnNamesQueryPart = string.Join(", ", x.ClientDataInfos.Select(y => y.TempAliasedColumnName)),
-                    Returning = string.Join(", ", x.ReturningInfos.Select(y => y.ColumnInfo.ColumnName)),
-                    ReturningSetQueryPart = string.Join(", ", others.Select(y => $"{y.My.TempAliasedColumnName} = source.{y.Others.ColumnInfo.ColumnName}"))
+                    SourceColumnNamesQueryPart = string.Join(", ", x.ClientDataInfos.Select(y => NpgsqlHelper.GetQualifiedName(y.TempAliasedColumnName))),
+                    Returning = string.Join(", ", x.ReturningInfos.Select(y => NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName))),
+                    ReturningSetQueryPart = string.Join(", ", others.Select(y => $"{NpgsqlHelper.GetQualifiedName(y.My.TempAliasedColumnName)} " +
+                        $" = source.{NpgsqlHelper.GetQualifiedName(y.Others.ColumnInfo.ColumnName)}"))
                 };
             }).ToList();
 
