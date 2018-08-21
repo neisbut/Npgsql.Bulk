@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Core.Mapping;
 using System.Data.Entity.Core.Metadata.Edm;
@@ -43,10 +44,11 @@ namespace Npgsql.Bulk
             return (NpgsqlConnection)context.Database.Connection;
         }
 
-        internal static DbContextTransaction EnsureOrStartTransaction(DbContext context)
+        internal static DbContextTransaction EnsureOrStartTransaction(
+            DbContext context, IsolationLevel isolation)
         {
             if (context.Database.CurrentTransaction == null)
-                return context.Database.BeginTransaction();
+                return context.Database.BeginTransaction(isolation);
             return null;
         }
 

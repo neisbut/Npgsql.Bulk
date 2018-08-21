@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Core.Common.CommandTrees;
 using System.Data.Entity.Core.Objects;
@@ -32,7 +33,7 @@ namespace Npgsql.Bulk
             var conn = NpgsqlHelper.GetNpgsqlConnection(context);
 
 
-            var localTr = NpgsqlHelper.EnsureOrStartTransaction(context);
+            var localTr = NpgsqlHelper.EnsureOrStartTransaction(context, IsolationLevel.ReadCommitted);
             try
             {
                 context.Database.ExecuteSqlCommand(schemaSql);

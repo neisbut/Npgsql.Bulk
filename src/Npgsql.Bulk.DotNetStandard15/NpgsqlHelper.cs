@@ -26,10 +26,11 @@ namespace Npgsql.Bulk
             return (NpgsqlConnection)context.Database.GetDbConnection();
         }
 
-        internal static IDbContextTransaction EnsureOrStartTransaction(DbContext context)
+        internal static IDbContextTransaction EnsureOrStartTransaction(
+            DbContext context, IsolationLevel isolation)
         {
             if (context.Database.CurrentTransaction == null)
-                return context.Database.BeginTransaction();
+                return context.Database.BeginTransaction(isolation);
             return null;
         }
 

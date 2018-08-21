@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reflection;
 using Npgsql.Bulk.Model;
 using System.Text;
+using System.Data;
 
 namespace Npgsql.Bulk
 {
@@ -25,6 +26,8 @@ namespace Npgsql.Bulk
         private static readonly Dictionary<Type, object> EntityInfoLocks = new Dictionary<Type, object>();
 
         private readonly DbContext context;
+
+        public IsolationLevel DefaultIsolationLevel { get; set; } = IsolationLevel.ReadCommitted;
 
         public NpgsqlBulkUploader(DbContext context)
         {
@@ -130,7 +133,7 @@ namespace Npgsql.Bulk
         {
             var conn = NpgsqlHelper.GetNpgsqlConnection(context);
             var connOpenedHere = EnsureConnected(conn);
-            var transaction = NpgsqlHelper.EnsureOrStartTransaction(context);
+            var transaction = NpgsqlHelper.EnsureOrStartTransaction(context, DefaultIsolationLevel);
 
             var mapping = GetEntityInfo<T>();
 
@@ -217,7 +220,7 @@ namespace Npgsql.Bulk
         {
             var conn = NpgsqlHelper.GetNpgsqlConnection(context);
             var connOpenedHere = EnsureConnected(conn);
-            var transaction = NpgsqlHelper.EnsureOrStartTransaction(context);
+            var transaction = NpgsqlHelper.EnsureOrStartTransaction(context, DefaultIsolationLevel);
 
             var mapping = GetEntityInfo<T>();
 
