@@ -4,7 +4,7 @@
     <TargetFramework>netstandard1.5</TargetFramework>
     <RootNamespace>Npgsql.Bulk</RootNamespace>
     <AssemblyName>Npgsql.Bulk</AssemblyName>
-    <AssemblyVersion>0.5.18.0</AssemblyVersion>
+    <AssemblyVersion>0.5.19.0</AssemblyVersion>
     <FileVersion>0.5.18.0</FileVersion>
   </PropertyGroup>
 
@@ -16,6 +16,7 @@
     <Compile Include="..\Npgsql.Bulk\Model\EntityInfo.cs" Link="Model\EntityInfo.cs" />
     <Compile Include="..\Npgsql.Bulk\Model\InsertQueryParts.cs" Link="Model\InsertQueryParts.cs" />
     <Compile Include="..\Npgsql.Bulk\Model\MappingInfo.cs" Link="Model\MappingInfo.cs" />
+    <Compile Include="..\Npgsql.Bulk\Model\TableLockLevel.cs" Link="Model\TableLockLevel.cs" />
     <Compile Include="..\Npgsql.Bulk\Model\UpdateQueryParts.cs" Link="Model\UpdateQueryParts.cs" />
     <Compile Include="..\Npgsql.Bulk\NpgsqlBulkCodeBuilder.cs" Link="NpgsqlBulkCodeBuilder.cs" />
     <Compile Include="..\Npgsql.Bulk\NpgsqlBulkUploader.cs" Link="NpgsqlBulkUploader.cs" />

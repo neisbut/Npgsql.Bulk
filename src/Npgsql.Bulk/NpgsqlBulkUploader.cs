@@ -27,7 +27,15 @@ namespace Npgsql.Bulk
 
         private readonly DbContext context;
 
+        /// <summary>
+        /// When transaction needs to be started internally then this IsolationLevel will be used
+        /// </summary>
         public IsolationLevel DefaultIsolationLevel { get; set; } = IsolationLevel.ReadCommitted;
+
+        /// <summary>
+        /// Means what level of table lock needs to be accured when doing Update
+        /// </summary>
+        public TableLockLevel LockLevelOnUpdate { get; set; } = TableLockLevel.ShareRowExclusive;
 
         public NpgsqlBulkUploader(DbContext context)
         {
@@ -216,6 +224,21 @@ namespace Npgsql.Bulk
             }
         }
 
+        private static string LockLevelToString(TableLockLevel lockMode)
+        {
+            switch (lockMode)
+            {
+                case TableLockLevel.ShareRowExclusive:
+                    return "SHARE ROW EXCLUSIVE";
+                case TableLockLevel.Exclusive:
+                    return "EXCLUSIVE";
+                case TableLockLevel.AccessExclusive:
+                    return "ACCESS EXCLUSIVE";
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
         public void Update<T>(IEnumerable<T> entities)
         {
             var conn = NpgsqlHelper.GetNpgsqlConnection(context);
@@ -250,6 +273,12 @@ namespace Npgsql.Bulk
                 // 3. Insert into real table from temp one
                 foreach (var part in mapping.UpdateQueryParts)
                 {
+                    // 3.a Needs to accure lock
+                    if (LockLevelOnUpdate != TableLockLevel.NoLock)
+                    {
+                        sql = $"LOCK TABLE {part.TableNameQualified} IN {LockLevelToString(LockLevelOnUpdate)} MODE;";
+                        context.Database.ExecuteSqlCommand(sql);
+                    }
                     sql = $"UPDATE {part.TableNameQualified} SET {part.SetClause} FROM {tempTableName} as source WHERE {part.WhereClause}";
                     context.Database.ExecuteSqlCommand(sql);
                 }
