@@ -178,19 +178,26 @@ namespace Npgsql.Bulk
                 {
                     using (var cmd = conn.CreateCommand())
                     {
-                        var baseInsertCmd = $"INSERT INTO {insertPart.TableNameQualified} ({insertPart.TargetColumnNamesQueryPart}) SELECT {insertPart.SourceColumnNamesQueryPart} FROM {tempTableName}";
+                        var baseInsertCmd = $"INSERT INTO {insertPart.TableNameQualified} ({insertPart.TargetColumnNamesQueryPart}) " +
+                            $"SELECT {insertPart.SourceColumnNamesQueryPart} FROM {tempTableName} ORDER BY __index";
+
                         if (string.IsNullOrEmpty(insertPart.ReturningSetQueryPart))
                         {
                             cmd.CommandText = baseInsertCmd;
+
                             if (!string.IsNullOrEmpty(insertPart.Returning))
-                                cmd.CommandText += $" RETURNING {insertPart.Returning}";
+                            {
+                                cmd.CommandText = $"WITH inserted as (\n {baseInsertCmd} RETURNING {insertPart.Returning} \n ), \n";
+                                cmd.CommandText += $"source as (\n SELECT *, ROW_NUMBER() OVER (ORDER BY {insertPart.Returning}) as __index FROM inserted \n ) \n";
+                                cmd.CommandText += $"SELECT * FROM source ORDER BY __index";
+                            }
                         }
                         else
                         {
                             cmd.CommandText = $"WITH inserted as (\n {baseInsertCmd} RETURNING {insertPart.Returning} \n ), \n";
                             cmd.CommandText += $"source as (\n SELECT *, ROW_NUMBER() OVER (ORDER BY {insertPart.Returning}) as __index FROM inserted \n ) \n";
                             cmd.CommandText += $"UPDATE {tempTableName} SET {insertPart.ReturningSetQueryPart} FROM source WHERE {tempTableName}.__index = source.__index\n";
-                            cmd.CommandText += $" RETURNING {insertPart.Returning}";
+                            cmd.CommandText += $"RETURNING {insertPart.Returning}";
                         }
 
                         using (var reader = cmd.ExecuteReader())

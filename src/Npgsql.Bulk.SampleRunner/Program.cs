@@ -81,7 +81,9 @@ namespace Npgsql.Bulk
                     HouseNumber = i + 1,
                     PostalCode = codes[i % codes.Length],
                     ExtraHouseNumber = extraNumbers[i % extraNumbers.Length],
-                    LocalizedName = streets[i % streets.Length]
+                    LocalizedName = streets[i % streets.Length],
+                    Index1 = i,
+                    Index2 = i
                 }).ToList();
 
             var uploader = new NpgsqlBulkUploader(context);
@@ -91,6 +93,15 @@ namespace Npgsql.Bulk
             uploader.Insert(data);
             sw.Stop();
             Console.WriteLine($"Dynamic solution inserted {data.Count} records for {sw.Elapsed }");
+
+            // checking consitency
+            foreach (var addr in data)
+            {
+                if (addr.Index1 != addr.Index2)
+                {
+                    Console.WriteLine($"INCONSITENT! Id: {addr.AddressId}/{addr.Address2Id}, {addr.Index1} != {addr.Index2}");
+                }
+            }
 
             data.ForEach(x => x.HouseNumber += 1);
 

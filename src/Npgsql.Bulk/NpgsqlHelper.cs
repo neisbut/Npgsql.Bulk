@@ -78,6 +78,11 @@ namespace Npgsql.Bulk
                     .OfType<ScalarPropertyMapping>()
                     .Select(x =>
                     {
+                        var columnInfo = columnsInfo.FirstOrDefault(c => c.ColumnName == x.Column.Name);
+                        if (columnInfo == null)
+                            throw new InvalidOperationException(
+                                $"Column '{x.Column.Name}' (mapped to: '{x.Property.DeclaringType.Name}.{x.Property.Name}') is not found");
+
                         return new MappingInfo()
                         {
                             TableName = tableName,
@@ -85,7 +90,7 @@ namespace Npgsql.Bulk
                             Property = type.GetProperty(x.Property.Name,
                                 BindingFlags.NonPublic | BindingFlags.Public |
                                 BindingFlags.GetProperty | BindingFlags.Instance),
-                            ColumnInfo = columnsInfo.First(c => c.ColumnName == x.Column.Name),
+                            ColumnInfo = columnInfo,
                             IsDbGenerated = x.Column.IsStoreGeneratedComputed || x.Column.IsStoreGeneratedIdentity,
                             IsKey = entityType.KeyProperties.Any(y => y.Name == x.Property.Name)
                         };

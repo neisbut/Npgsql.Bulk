@@ -12,5 +12,8 @@ namespace Npgsql.Bulk.DAL
 
         [Column("localized_name"), Required()]
         public string LocalizedName { get; set; }
+
+        [Column("index2")]
+        public int Index2 { get; set; }
     }
 }
