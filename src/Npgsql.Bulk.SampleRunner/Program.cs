@@ -202,10 +202,14 @@ namespace Npgsql.Bulk
                         importer.StartRow();
                         importer.Write(address.StreetName);
                         importer.Write(address.HouseNumber);
-                        importer.Write(address.ExtraHouseNumber, NpgsqlTypes.NpgsqlDbType.Integer);
+                        if (address.ExtraHouseNumber.HasValue)
+                            importer.Write(address.ExtraHouseNumber.Value);
+                        else
+                            importer.WriteNull();
+
                         importer.Write(address.PostalCode);
                     }
-                    importer.Close();
+                    importer.Complete();
                 }
 
                 // 3. Insert into real table from temp one

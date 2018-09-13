@@ -70,6 +70,7 @@ namespace Npgsql.Bulk
                             importer.Write(kp.Property.GetValue(kd), kp.NpgsqlType);
                         }
                     }
+                    importer.Complete();
                 }
 
                 var whereSql = string.Join(" AND ",

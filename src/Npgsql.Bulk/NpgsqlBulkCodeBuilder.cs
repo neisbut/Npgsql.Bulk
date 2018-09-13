@@ -95,28 +95,67 @@ namespace Npgsql.Bulk
                 .ToArray();
             var writeMethodFull = writeMethods[0];
             var writeMethodShort = writeMethods[1];
+            var writeNull = typeof(NpgsqlBinaryImporter).GetMethods()
+                .First((x) => x.Name == "WriteNull");
 
+            var localVars = new Dictionary<Type, LocalBuilder>();
 
             foreach (var info in infos)
             {
                 var mi = (info.OverrideSourceMethod) ?? info.Property.GetGetMethod();
                 if (mi == null) throw new InvalidOperationException($"Property {info.Property.Name} is not accessible for bulk write");
-                ilOut.Emit(OpCodes.Ldarg_1);
-                ilOut.Emit(OpCodes.Ldarg_0);
-                ilOut.Emit(OpCodes.Call, mi);
-                if (info.NpgsqlType == NpgsqlTypes.NpgsqlDbType.Array)
+                var underlying = Nullable.GetUnderlyingType(mi.ReturnType);
+
+                if (underlying == null)
                 {
-                    ilOut.Emit(OpCodes.Call, writeMethodShort.MakeGenericMethod(mi.ReturnType));
-                }
-                else if(mi.ReturnType.GetTypeInfo().IsEnum)
-                {
-                    ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
-                    ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(typeof(Int32)));
+                    ilOut.Emit(OpCodes.Ldarg_1);
+                    ilOut.Emit(OpCodes.Ldarg_0);
+                    ilOut.Emit(OpCodes.Call, mi);
+                    if (info.NpgsqlType == NpgsqlTypes.NpgsqlDbType.Array)
+                    {
+                        ilOut.Emit(OpCodes.Call, writeMethodShort.MakeGenericMethod(mi.ReturnType));
+                    }
+                    else if (mi.ReturnType.GetTypeInfo().IsEnum)
+                    {
+                        ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
+                        ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(typeof(Int32)));
+                    }
+                    else
+                    {
+                        ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
+                        ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(mi.ReturnType));
+                    }
                 }
                 else
                 {
+                    if (!localVars.TryGetValue(mi.ReturnType, out LocalBuilder localVar))
+                        localVars[mi.ReturnType] = localVar = ilOut.DeclareLocal(mi.ReturnType);
+
+                    ilOut.Emit(OpCodes.Ldarg_0);
+                    ilOut.Emit(OpCodes.Callvirt, mi);
+                    ilOut.Emit(OpCodes.Stloc_S, localVar);
+
+                    ilOut.Emit(OpCodes.Ldloca_S, localVar);
+                    ilOut.Emit(OpCodes.Call, mi.ReturnType.GetMethod("get_HasValue"));
+
+                    var falseLbl = ilOut.DefineLabel();
+                    var outLbl = ilOut.DefineLabel();
+
+                    ilOut.Emit(OpCodes.Brfalse_S, falseLbl);
+
+                    ilOut.Emit(OpCodes.Ldarg_1);
+                    ilOut.Emit(OpCodes.Ldloca_S, localVar);
+                    ilOut.Emit(OpCodes.Call, mi.ReturnType.GetMethod("get_Value"));
                     ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
-                    ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(mi.ReturnType));
+                    ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(underlying));
+
+                    ilOut.Emit(OpCodes.Br_S, outLbl);
+
+                    ilOut.MarkLabel(falseLbl);
+                    ilOut.Emit(OpCodes.Ldarg_1);
+                    ilOut.Emit(OpCodes.Callvirt, writeNull);
+
+                    ilOut.MarkLabel(outLbl);
                 }
             }
 

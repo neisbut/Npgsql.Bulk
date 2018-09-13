@@ -171,7 +171,7 @@ namespace Npgsql.Bulk
                         importer.Write(index, NpgsqlDbType.Integer);
                         index++;
                     }
-                    importer.Close();
+                    importer.Complete();
                 }
 
                 // 3. Insert into real table from temp one
@@ -276,7 +276,7 @@ namespace Npgsql.Bulk
                         importer.StartRow();
                         codeBuilder.ClientDataWithKeyWriterAction(item, importer);
                     }
-                    importer.Close();
+                    importer.Complete();
                 }
 
                 // 3. Insert into real table from temp one
