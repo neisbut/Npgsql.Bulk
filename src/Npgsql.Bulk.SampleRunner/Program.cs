@@ -30,6 +30,10 @@ namespace Npgsql.Bulk
             var streets = new[] { "First", "Second", "Third" };
             var codes = new[] { "001001", "002002", "003003", "004004" };
             var extraNumbers = new int?[] { null, 1, 2, 3, 5, 8, 13, 21, 34 };
+            var addressTypes = new AddressType?[] { null, AddressType.Type1, AddressType.Type2 };
+            var dates = new DateTime?[] { null, DateTime.Now };
+            var guids = new Guid?[] { null, Guid.Empty };
+            var decimals = new decimal?[] { null, decimal.Zero };
 
             var context = new BulkContext("DefaultConnection");
             context.Database.ExecuteSqlCommand("TRUNCATE addresses cascade");
@@ -40,7 +44,11 @@ namespace Npgsql.Bulk
                     StreetName = streets[i % streets.Length],
                     HouseNumber = i + 1,
                     PostalCode = codes[i % codes.Length],
-                    ExtraHouseNumber = extraNumbers[i % extraNumbers.Length]
+                    ExtraHouseNumber = extraNumbers[i % extraNumbers.Length],
+                    Type = addressTypes[i % addressTypes.Length],
+                    Date = dates[i % dates.Length],
+                    Guid = guids[i % guids.Length],
+                    Dec = decimals[i % decimals.Length]
                 }).ToList();
 
             var uploader = new NpgsqlBulkUploader(context);

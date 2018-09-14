@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -18,6 +19,21 @@ namespace Npgsql.Bulk.DAL
 
         [Column("extra_house_number")]
         public int? ExtraHouseNumber { get; set; }
+
+        [Column("type")]
+        public AddressType? Type { get; set; }
+
+        [Column("guid")]
+        public Guid? Guid { get; set; }
+
+        [Column("datetime")]
+        public DateTime? Date { get; set; }
+
+        //[Column("hstore")]
+        //public Dictionary<string, string> Hstore { get; set; }
+
+        [Column("decimal")]
+        public decimal? Dec { get; set; }
 
         [Column("postal_code"), Required()]
         public string PostalCode { get; set; }

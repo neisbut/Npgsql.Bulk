@@ -15,6 +15,20 @@ namespace Npgsql.Bulk
     /// <typeparam name="T"></typeparam>
     internal class NpgsqlBulkCodeBuilder<T>
     {
+
+        static MethodInfo writeMethodFull = typeof(NpgsqlBinaryImporter).GetMethods()
+            .Where((x) => x.Name == "Write")
+            .First(x => x.GetParameters().Length == 2 &&
+                x.GetParameters()[1].ParameterType == typeof(NpgsqlTypes.NpgsqlDbType));
+
+        static MethodInfo writeMethodShort = typeof(NpgsqlBinaryImporter).GetMethods()
+            .Where((x) => x.Name == "Write")
+            .First(x => x.GetParameters().Length == 1);
+
+        static MethodInfo writeNull = typeof(NpgsqlBinaryImporter).GetMethods()
+            .First((x) => x.Name == "WriteNull");
+        static MethodInfo toArraymethod = typeof(Enumerable).GetMethod("ToArray");
+
         private AssemblyName assemblyName;
         private AssemblyBuilder assemblyBuilder;
         private ModuleBuilder moduleBuilder;
@@ -89,15 +103,6 @@ namespace Npgsql.Bulk
                 new[] { typeof(T), typeof(NpgsqlBinaryImporter) });
 
             var ilOut = methodBuilder.GetILGenerator();
-            var writeMethods = typeof(NpgsqlBinaryImporter).GetMethods()
-                .Where((x) => x.Name == "Write")
-                .OrderByDescending(x => x.GetParameters().Length)
-                .ToArray();
-            var writeMethodFull = writeMethods[0];
-            var writeMethodShort = writeMethods[1];
-            var writeNull = typeof(NpgsqlBinaryImporter).GetMethods()
-                .First((x) => x.Name == "WriteNull");
-
             var localVars = new Dictionary<Type, LocalBuilder>();
 
             foreach (var info in infos)
@@ -110,10 +115,24 @@ namespace Npgsql.Bulk
                 {
                     ilOut.Emit(OpCodes.Ldarg_1);
                     ilOut.Emit(OpCodes.Ldarg_0);
-                    ilOut.Emit(OpCodes.Call, mi);
+                    ilOut.Emit(mi.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, mi);
+
                     if (info.NpgsqlType == NpgsqlTypes.NpgsqlDbType.Array)
                     {
-                        ilOut.Emit(OpCodes.Call, writeMethodShort.MakeGenericMethod(mi.ReturnType));
+                        if (mi.ReturnType.IsArray)
+                        {
+                            ilOut.Emit(OpCodes.Callvirt, writeMethodShort.MakeGenericMethod(mi.ReturnType));
+                        }
+                        else if (mi.ReturnType.IsGenericType && mi.ReturnType.GetGenericTypeDefinition() == typeof(List<>))
+                        {
+                            ilOut.Emit(OpCodes.Callvirt, writeMethodShort.MakeGenericMethod(mi.ReturnType));
+                        }
+                        else
+                        {
+                            var toArrayLocal = toArraymethod.MakeGenericMethod(mi.ReturnType.GetGenericArguments()[0]);
+                            ilOut.Emit(OpCodes.Call, toArrayLocal);
+                            ilOut.Emit(OpCodes.Callvirt, writeMethodShort.MakeGenericMethod(toArrayLocal.ReturnType));
+                        }
                     }
                     else if (mi.ReturnType.GetTypeInfo().IsEnum)
                     {
@@ -133,7 +152,7 @@ namespace Npgsql.Bulk
 
                     ilOut.Emit(OpCodes.Ldarg_0);
                     ilOut.Emit(OpCodes.Callvirt, mi);
-                    ilOut.Emit(OpCodes.Stloc_S, localVar);
+                    ilOut.Emit(OpCodes.Stloc, localVar);
 
                     ilOut.Emit(OpCodes.Ldloca_S, localVar);
                     ilOut.Emit(OpCodes.Call, mi.ReturnType.GetMethod("get_HasValue"));
@@ -144,10 +163,15 @@ namespace Npgsql.Bulk
                     ilOut.Emit(OpCodes.Brfalse_S, falseLbl);
 
                     ilOut.Emit(OpCodes.Ldarg_1);
-                    ilOut.Emit(OpCodes.Ldloca_S, localVar);
+                    ilOut.Emit(OpCodes.Ldloca, localVar);
                     ilOut.Emit(OpCodes.Call, mi.ReturnType.GetMethod("get_Value"));
+
                     ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
-                    ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(underlying));
+
+                    if (underlying.IsEnum)
+                        ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(typeof(int)));
+                    else
+                        ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(underlying));
 
                     ilOut.Emit(OpCodes.Br_S, outLbl);
 

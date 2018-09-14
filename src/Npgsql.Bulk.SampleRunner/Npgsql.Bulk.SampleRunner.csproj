@@ -71,6 +71,7 @@
   <ItemGroup>
     <Compile Include="DAL\Address2.cs" />
     <Compile Include="DAL\Address.cs" />
+    <Compile Include="DAL\AddressType.cs" />
     <Compile Include="DAL\BulkContext.cs" />
     <Compile Include="DAL\TestDbConfiguration.cs" />
     <Compile Include="Program.cs" />
