@@ -467,10 +467,17 @@ namespace Npgsql.Bulk
                         var colName = NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName);
                         return $"{colName} = source.{y.TempAliasedColumnName}";
                     })),
-                    WhereClause = string.Join(" and ", x.KeyInfos.Select(y =>
+                    WhereClause = string.Join(" AND ", x.KeyInfos.Select(y =>
                     {
                         var colName = NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName);
-                        return $"{colName} = source.{y.TempAliasedColumnName}";
+                        var clause = $"{colName} = source.{y.TempAliasedColumnName}";
+
+                        if (y.IsNullableInClr)
+                        {
+                            clause = $"({clause} OR ({colName} IS NULL AND source.{y.TempAliasedColumnName} IS NULL))";
+                        }
+
+                        return clause;
                     }))
                 };
             }).ToList();

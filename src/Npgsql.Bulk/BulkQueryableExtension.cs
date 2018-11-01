@@ -74,8 +74,20 @@ namespace Npgsql.Bulk
                 }
 
                 var whereSql = string.Join(" AND ",
-                    mapsInfo.Select(x => $"source.{NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName)}" +
-                    $" = {keyDataTable}.{NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName)}"));
+                    mapsInfo.Select(x =>
+                    {
+                        var sourceColumn = NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName);
+                        var targetColumn = NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName);
+
+                        var clause = $"source.{sourceColumn} = {keyDataTable}.{targetColumn}";
+
+                        if (x.IsNullableInClr)
+                        {
+                            clause = $"({clause} OR (source.{sourceColumn} IS NULL AND {keyDataTable}.{targetColumn} IS NULL))";
+                        }
+
+                        return clause;
+                    }));
 
                 var selectSql = $"SELECT source.* FROM ({source}) as source\n" +
                     $"JOIN {keyDataTable} ON {whereSql}";
