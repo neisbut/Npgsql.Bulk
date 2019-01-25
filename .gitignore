@@ -289,3 +289,6 @@ __pycache__/
 /src/lib/
 /src/Package.nuspec
 /src/CreatePackage.bat
+/src/Npgsql.Bulk.MesitisTest
+/src/Npgsql.Bulk.MesitisTest.sln
+/src/Npgsql.Bulk.MesitisTest.Core
