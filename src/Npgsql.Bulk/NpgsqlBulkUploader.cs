@@ -137,11 +137,12 @@ namespace Npgsql.Bulk
                 return Convert.ChangeType(value, expectedType);
         }
 
-        public void Insert<T>(IEnumerable<T> entities)
+        public void Insert<T>(IEnumerable<T> entities, bool ignoreDuplicates = false)
         {
             var conn = NpgsqlHelper.GetNpgsqlConnection(context);
             var connOpenedHere = EnsureConnected(conn);
             var transaction = NpgsqlHelper.EnsureOrStartTransaction(context, DefaultIsolationLevel);
+            var ignoreDuplicatesStatement = ignoreDuplicates ? "ON CONFLICT DO NOTHING" : "";
 
             var mapping = GetEntityInfo<T>();
 
@@ -180,7 +181,7 @@ namespace Npgsql.Bulk
                     using (var cmd = conn.CreateCommand())
                     {
                         var baseInsertCmd = $"INSERT INTO {insertPart.TableNameQualified} ({insertPart.TargetColumnNamesQueryPart}) " +
-                            $"SELECT {insertPart.SourceColumnNamesQueryPart} FROM {tempTableName} ORDER BY __index";
+                            $"SELECT {insertPart.SourceColumnNamesQueryPart} FROM {tempTableName} ORDER BY __index {ignoreDuplicatesStatement}";
 
                         if (string.IsNullOrEmpty(insertPart.ReturningSetQueryPart))
                         {
@@ -210,7 +211,7 @@ namespace Npgsql.Bulk
                                 foreach (var item in list)
                                 {
                                     reader.Read();
-                                    readAction(item, reader);
+                                    if(reader.IsOnRow) readAction(item, reader);
                                 }
                             }
                         }
