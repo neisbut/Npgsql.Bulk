@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Npgsql.Bulk.DAL;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Diagnostics;
 using System.Linq;
-using Npgsql.Bulk.DAL;
 
 namespace Npgsql.Bulk
 {
@@ -61,7 +61,8 @@ namespace Npgsql.Bulk
 
             context.Database.ExecuteSqlCommand("DELETE FROM addresses");
             sw = Stopwatch.StartNew();
-            uploader.Insert(data);
+            // uploader.Insert(data, InsertConflictAction.UpdateProperty<Address>(x => x.AddressId, x => x.Dec));
+            uploader.Insert(data, InsertConflictAction.DoNothing());
             sw.Stop();
             Console.WriteLine($"Dynamic solution inserted {data.Count} records for {sw.Elapsed }");
 

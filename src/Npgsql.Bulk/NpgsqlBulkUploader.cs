@@ -2,8 +2,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 #if NETSTANDARD1_5 || NETSTANDARD2_0
 using Microsoft.EntityFrameworkCore;
 #else
@@ -12,7 +10,6 @@ using System.Data.Entity;
 using System.Linq;
 using System.Reflection;
 using Npgsql.Bulk.Model;
-using System.Text;
 using System.Data;
 
 namespace Npgsql.Bulk
@@ -72,7 +69,7 @@ namespace Npgsql.Bulk
                 case "bigint":
                     return NpgsqlDbType.Bigint;
                 case "timetz":
-                    return NpgsqlDbType.TimeTZ;
+                    return NpgsqlDbType.TimeTz;
                 case "time":
                     return NpgsqlDbType.Time;
                 case "date":
@@ -85,7 +82,7 @@ namespace Npgsql.Bulk
                 case "timestamp":
                     return NpgsqlDbType.Timestamp;
                 case "timestamptz":
-                    return NpgsqlDbType.TimestampTZ;
+                    return NpgsqlDbType.TimestampTz;
                 case "bpchar":
                     return NpgsqlDbType.Char;
                 case "hstore":
@@ -139,11 +136,18 @@ namespace Npgsql.Bulk
 
         public void Insert<T>(IEnumerable<T> entities)
         {
+            Insert<T>(entities, null);
+        }
+
+        public void Insert<T>(IEnumerable<T> entities, InsertConflictAction onConflict)
+        {
             var conn = NpgsqlHelper.GetNpgsqlConnection(context);
             var connOpenedHere = EnsureConnected(conn);
             var transaction = NpgsqlHelper.EnsureOrStartTransaction(context, DefaultIsolationLevel);
-
             var mapping = GetEntityInfo<T>();
+
+            var ignoreDuplicatesStatement = onConflict?.GetSql(mapping);
+
 
             try
             {
@@ -180,7 +184,7 @@ namespace Npgsql.Bulk
                     using (var cmd = conn.CreateCommand())
                     {
                         var baseInsertCmd = $"INSERT INTO {insertPart.TableNameQualified} ({insertPart.TargetColumnNamesQueryPart}) " +
-                            $"SELECT {insertPart.SourceColumnNamesQueryPart} FROM {tempTableName} ORDER BY __index";
+                            $"SELECT {insertPart.SourceColumnNamesQueryPart} FROM {tempTableName} ORDER BY __index {ignoreDuplicatesStatement}";
 
                         if (string.IsNullOrEmpty(insertPart.ReturningSetQueryPart))
                         {
@@ -206,11 +210,21 @@ namespace Npgsql.Bulk
                             // 4. Propagate computed value
                             if (!string.IsNullOrEmpty(insertPart.Returning))
                             {
-                                var readAction = codeBuilder.IdentityValuesWriterActions[insertPart.TableName];
-                                foreach (var item in list)
+                                if (onConflict == null)
                                 {
-                                    reader.Read();
-                                    readAction(item, reader);
+                                    var readAction = codeBuilder.IdentityValuesWriterActions[insertPart.TableName];
+                                    foreach (var item in list)
+                                    {
+                                        reader.Read();
+                                        readAction(item, reader);
+                                    }
+                                }
+                                else
+                                {
+                                    while (reader.Read())
+                                    {
+                                        // do nothing, for now...
+                                    }
                                 }
                             }
                         }
@@ -403,6 +417,7 @@ namespace Npgsql.Bulk
                 TableName = tableName,
                 CodeBuilder = codeBuilder,
                 MappingInfos = mappingInfo,
+                PropToMappingInfo = mappingInfo.ToDictionary(x => x.Property),
                 TableNames = mappingInfo.Select(x => x.TableName).Distinct().ToArray(),
                 ClientDataInfos = mappingInfo.Where(x => !x.IsDbGenerated).ToArray(),
                 ClientDataWithKeysInfos = mappingInfo.Where(x => !x.IsDbGenerated || x.IsKey).ToArray()

@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
+using System.Reflection;
 
 namespace Npgsql.Bulk.Model
 {
@@ -13,6 +12,8 @@ namespace Npgsql.Bulk.Model
         public string[] TableNames { get; internal set; }
 
         public List<MappingInfo> MappingInfos { get; set; }
+
+        public Dictionary<PropertyInfo, MappingInfo> PropToMappingInfo { get; set; }
 
         public string SelectSourceForInsertQuery { get; set; }
 
