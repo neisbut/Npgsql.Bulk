@@ -321,6 +321,54 @@ namespace Npgsql.Bulk
             }
         }
 
+        /// <summary>
+        /// Simplified version of Insert which works better for huge sets (not calling ToList internally).
+        /// Note: it imports directly to target table, doesn't use RETURING, doesn't support inheritance
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entities"></param>
+        /// <param name="onConflict"></param>
+        public void Import<T>(IEnumerable<T> entities)
+        {
+            var mapping = GetEntityInfo<T>();
+            if (mapping.InsertQueryParts.Count > 1)
+                throw new NotSupportedException($"Import doesn't support entities with inheritance for now");
+
+            var conn = NpgsqlHelper.GetNpgsqlConnection(context);
+            var connOpenedHere = EnsureConnected(conn);
+            var transaction = NpgsqlHelper.EnsureOrStartTransaction(context, DefaultIsolationLevel);
+
+            try
+            {
+                // Prepare variables
+                var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
+
+                // Import
+                using (var importer = conn.BeginBinaryImport($"COPY {mapping.TableNameQualified} ({mapping.InsertQueryParts[0].TargetColumnNamesQueryPart}) FROM STDIN (FORMAT BINARY)"))
+                {
+                    foreach (var item in entities)
+                    {
+                        importer.StartRow();
+                        codeBuilder.ClientDataWriterAction(item, importer);
+                    }
+                    importer.Complete();
+                }
+
+                // Commit
+                transaction?.Commit();
+            }
+            catch
+            {
+                transaction?.Rollback();
+                throw;
+            }
+            finally
+            {
+                if (connOpenedHere)
+                    conn.Close();
+            }
+        }
+
         private List<MappingInfo> GetMappingInfo(Type type, string tableName)
         {
             var mappings = NpgsqlHelper.GetMetadata(context, type);

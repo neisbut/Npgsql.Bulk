@@ -43,6 +43,12 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
             sw.Stop();
             Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed }");
 
+            context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
+            sw = Stopwatch.StartNew();
+            uploader.Import(data);
+            sw.Stop();
+            Console.WriteLine($"Dynamic solution imported {data.Count} records for {sw.Elapsed }");
+
             Console.ReadLine();
         }
     }

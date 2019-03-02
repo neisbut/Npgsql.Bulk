@@ -72,6 +72,12 @@ namespace Npgsql.Bulk
             uploader.Update(data);
             sw.Stop();
             Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed }");
+
+            context.Database.ExecuteSqlCommand("DELETE FROM addresses");
+            sw = Stopwatch.StartNew();
+            uploader.Import(data);
+            sw.Stop();
+            Console.WriteLine($"Dynamic solution imported {data.Count} records for {sw.Elapsed }");
         }
 
         static void TestInheritanceCase()
