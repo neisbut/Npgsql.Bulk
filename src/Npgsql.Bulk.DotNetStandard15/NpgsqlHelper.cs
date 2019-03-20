@@ -1,13 +1,16 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
 using Npgsql.Bulk.Model;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.Linq;
-using System.Reflection;
+using System.Linq.Expressions;
 
 namespace Npgsql.Bulk
 {
@@ -89,13 +92,23 @@ namespace Npgsql.Bulk
                 .Select(x =>
                 {
                     var relational = x.DeclaringEntityType.Relational();
+                    ValueGenerator localGenerator = null;
+
+                    var generatorFactory = x.GetAnnotations().FirstOrDefault(a => a.Name == "ValueGeneratorFactory");
+                    if (generatorFactory != null)
+                    {
+                        var valueGeneratorAccessor = generatorFactory.Value as Func<IProperty, IEntityType, ValueGenerator>;
+                        localGenerator = valueGeneratorAccessor(x, x.DeclaringEntityType);
+                    }
+
                     return new MappingInfo()
                     {
                         TableName = relational.TableName,
                         TableNameQualified = NpgsqlHelper.GetQualifiedName(relational.TableName, relational.Schema),
                         Property = x.PropertyInfo,
                         ColumnInfo = columnsInfo.First(c => c.ColumnName == x.Relational().ColumnName),
-                        IsDbGenerated = x.ValueGenerated != ValueGenerated.Never,
+                        IsDbGenerated = x.ValueGenerated != ValueGenerated.Never && localGenerator == null,
+                        LocalGenerator = localGenerator,
                         IsKey = x.IsKey(),
                         IsInheritanceUsed = entityType.BaseType != null
                     };

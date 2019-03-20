@@ -22,7 +22,7 @@ namespace Npgsql.Bulk.DAL
         [Column("postal_code"), Required()]
         public string PostalCode { get; set; }
 
-        [Column("created_at"), DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+        [Column("created_at")]
         public DateTime CreatedAt { get; set; }
     }
 }

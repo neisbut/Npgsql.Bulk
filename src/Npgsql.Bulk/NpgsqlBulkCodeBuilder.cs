@@ -5,6 +5,10 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
+#if NETSTANDARD1_5 || NETSTANDARD2_0
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
+#endif
 using Npgsql.Bulk.Model;
 
 namespace Npgsql.Bulk
@@ -41,9 +45,12 @@ namespace Npgsql.Bulk
         public Action<T, NpgsqlBinaryImporter> ClientDataWithKeyWriterAction { get; private set; }
         public Dictionary<string, Action<T, NpgsqlDataReader>> IdentityValuesWriterActions { get; private set; }
 
-        public void InitBuilder(MappingInfo[] clientDataInfos,
-            MappingInfo[] clientDataWithKeyInfos,
-            MappingInfo[] identityMappingInfos,
+#if NETSTANDARD1_5 || NETSTANDARD2_0
+        public Action<T, EntityEntry, Dictionary<string, ValueGenerator>> AutoGenerateValues { get; private set; }
+#endif
+
+        public void InitBuilder(
+            EntityInfo entityInfo,
             Func<Type, NpgsqlDataReader, string, object> readerFunc)
         {
             var name = $"{typeof(T).Name}_{DateTime.Now.Ticks}";
@@ -56,25 +63,30 @@ namespace Npgsql.Bulk
 
             typeBuilder = moduleBuilder.DefineType(name, TypeAttributes.Public);
 
-            GenerateWriteCode(clientDataInfos, clientDataWithKeyInfos, identityMappingInfos, readerFunc);
+            GenerateWriteCode(entityInfo, readerFunc);
 
         }
 
-        private void GenerateWriteCode(MappingInfo[] clientDataInfos,
-            MappingInfo[] clientDataWithKeyInfos,
-            MappingInfo[] identityMappingInfos,
+        private void GenerateWriteCode(
+            EntityInfo entityInfo,
             Func<Type, NpgsqlDataReader, string, object> readerFunc)
         {
+            MappingInfo[] clientDataInfos = entityInfo.ClientDataInfos;
+            MappingInfo[] clientDataWithKeyInfos = entityInfo.ClientDataWithKeysInfos;
+            MappingInfo[] identityMappingInfos = entityInfo.DbGeneratedInfos;
+
             var identByTableName = identityMappingInfos.GroupBy(x => x.TableName).ToList();
 
             CreateWriterMethod("ClientDataWriter", clientDataInfos);
             CreateWriterMethod("ClientDataWithKeyWriter", clientDataWithKeyInfos);
+            
 
             foreach (var byTableName in identByTableName)
                 CreateReaderMethod($"IdentityValuesWriter_{byTableName.Key}", byTableName.ToArray(), readerFunc);
 
 
 #if NETSTANDARD1_5 || NETSTANDARD2_0
+            CreateAutoGenerateMethods("AutoGenerateValues", entityInfo.PropertyToGenerators);
             generatedType = typeBuilder.CreateTypeInfo().AsType();
 #else
             generatedType = typeBuilder.CreateType();
@@ -90,6 +102,11 @@ namespace Npgsql.Bulk
                 IdentityValuesWriterActions[byTableName.Key] =
                     (Action<T, NpgsqlDataReader>)generatedType.GetMethod($"IdentityValuesWriter_{byTableName.Key}")
                         .CreateDelegate(typeof(Action<T, NpgsqlDataReader>));
+
+#if NETSTANDARD1_5 || NETSTANDARD2_0
+            AutoGenerateValues = (Action<T, EntityEntry, Dictionary<string, ValueGenerator>>)generatedType.GetMethod("AutoGenerateValues")
+                .CreateDelegate(typeof(Action<T, EntityEntry, Dictionary<string, ValueGenerator>>));
+#endif
 
             IsInitialized = true;
         }
@@ -214,6 +231,39 @@ namespace Npgsql.Bulk
 
             ilOut.Emit(OpCodes.Ret);
         }
+
+
+#if NETSTANDARD1_5 || NETSTANDARD2_0
+        private void CreateAutoGenerateMethods(string methodName, Dictionary<PropertyInfo, ValueGenerator> generators)
+        {
+            var methodBuilder = typeBuilder.DefineMethod(
+                methodName,
+                MethodAttributes.Public | MethodAttributes.Static,
+                typeof(void),
+                new[] { typeof(T), typeof(EntityEntry), typeof(Dictionary<string, ValueGenerator>) });
+
+            var ilOut = methodBuilder.GetILGenerator();
+            var getGeneratorMethod = typeof(Dictionary<string, ValueGenerator>).GetProperty("Item").GetGetMethod();
+            var nextMethod = typeof(ValueGenerator).GetMethod("Next");
+
+            foreach (var generator in generators)
+            {
+                ilOut.Emit(OpCodes.Ldarg_0);
+
+                ilOut.Emit(OpCodes.Ldarg_2);
+                ilOut.Emit(OpCodes.Ldstr, generator.Key.Name);
+                ilOut.Emit(OpCodes.Callvirt, getGeneratorMethod);
+
+                ilOut.Emit(OpCodes.Ldarg_1);
+                ilOut.Emit(OpCodes.Callvirt, nextMethod);
+
+                ilOut.Emit(OpCodes.Unbox_Any, generator.Key.PropertyType);
+                ilOut.Emit(OpCodes.Callvirt, generator.Key.GetSetMethod());
+            }
+
+            ilOut.Emit(OpCodes.Ret);
+        }
+#endif
 
     }
 }

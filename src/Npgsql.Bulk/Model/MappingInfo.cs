@@ -4,6 +4,9 @@ using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System;
+#if NETSTANDARD1_5 || NETSTANDARD2_0
+using Microsoft.EntityFrameworkCore.ValueGeneration;
+#endif
 
 namespace Npgsql.Bulk.Model
 {
@@ -57,6 +60,10 @@ namespace Npgsql.Bulk.Model
         public NpgsqlDbType NpgsqlType { get; set; }
 
         public bool IsDbGenerated { get; set; }
+
+#if NETSTANDARD1_5 || NETSTANDARD2_0
+        public ValueGenerator LocalGenerator { get; set; }
+#endif
 
         public bool IsKey { get; set; }
 

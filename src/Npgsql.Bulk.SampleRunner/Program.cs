@@ -61,7 +61,9 @@ namespace Npgsql.Bulk
 
             context.Database.ExecuteSqlCommand("DELETE FROM addresses");
             sw = Stopwatch.StartNew();
-            // uploader.Insert(data, InsertConflictAction.UpdateProperty<Address>(x => x.AddressId, x => x.Dec));
+
+            uploader.Insert(data, InsertConflictAction.UpdateProperty<Address>(x => x.AddressId, x => x.Dec));
+
             uploader.Insert(data, InsertConflictAction.DoNothing());
             sw.Stop();
             Console.WriteLine($"Dynamic solution inserted {data.Count} records for {sw.Elapsed }");

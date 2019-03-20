@@ -1,4 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
+using System;
 
 namespace Npgsql.Bulk.DAL
 {
@@ -14,7 +18,19 @@ namespace Npgsql.Bulk.DAL
         {
             base.OnModelCreating(modelBuilder);
 
-            //modelBuilder.Entity<Address2>().Property(x => x.AddressId).HasColumnName("base_address_id");
+            modelBuilder.Entity<Address>().Property(x => x.CreatedAt)
+                .HasValueGenerator<ValueGen>().ValueGeneratedOnAdd();
+
+        }
+    }
+
+    public class ValueGen : ValueGenerator
+    {
+        public override bool GeneratesTemporaryValues => false;
+
+        protected override object NextValue(EntityEntry entry)
+        {
+            return DateTime.Now;
         }
     }
 }
