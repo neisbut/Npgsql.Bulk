@@ -94,6 +94,8 @@ namespace Npgsql.Bulk
                     return NpgsqlDbType.Jsonb;
                 case "_text":
                     return NpgsqlDbType.Array;
+                case "bytea":
+                    return NpgsqlDbType.Bytea;
                 default:
 
                     if (info.ColumnTypeExtra.Equals("array", StringComparison.OrdinalIgnoreCase))
