@@ -36,6 +36,8 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 
             var uploader = new NpgsqlBulkUploader(context);
 
+            context.Attach(data[0]);
+
             var sw = Stopwatch.StartNew();
             uploader.Insert(data);
             sw.Stop();

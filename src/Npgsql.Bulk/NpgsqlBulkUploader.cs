@@ -157,10 +157,14 @@ namespace Npgsql.Bulk
 
             foreach (var item in entities)
             {
-                var entry = sm.GetOrCreateEntry(item);
+                var entry = sm.TryGetEntry(item);
+                if (entry == null)
+                {
+                    entry = sm.GetOrCreateEntry(item);
 
-                codeBuilders.AutoGenerateValues(
-                    item, new Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry(entry), infos.PropertyNameToGenerators);
+                    codeBuilders.AutoGenerateValues(
+                        item, new Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry(entry), infos.PropertyNameToGenerators);
+                }
             }
         }
 #endif
