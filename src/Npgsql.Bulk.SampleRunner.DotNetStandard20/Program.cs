@@ -20,7 +20,7 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
             var extraNumbers = new int?[] { null, 1, 2, 3, 5, 8, 13, 21, 34 };
 
             var optionsBuilder = new DbContextOptionsBuilder<BulkContext>();
-            optionsBuilder.UseNpgsql("server=localhost;user id=postgres;password=qwerty;database=copy;port=5433");
+            optionsBuilder.UseNpgsql("server=localhost;user id=postgres;password=qwerty;database=copy;port=5432");
 
             var context = new BulkContext(optionsBuilder.Options);
             context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
@@ -31,7 +31,8 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
                     StreetName = streets[i % streets.Length],
                     HouseNumber = i + 1,
                     PostalCode = codes[i % codes.Length],
-                    ExtraHouseNumber = extraNumbers[i % extraNumbers.Length]
+                    ExtraHouseNumber = extraNumbers[i % extraNumbers.Length],
+                    Duration = new NpgsqlTypes.NpgsqlRange<DateTime>(DateTime.Now, DateTime.Now)
                 }).ToList();
 
             var uploader = new NpgsqlBulkUploader(context);

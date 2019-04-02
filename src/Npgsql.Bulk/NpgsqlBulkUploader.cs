@@ -96,6 +96,8 @@ namespace Npgsql.Bulk
                     return NpgsqlDbType.Array;
                 case "bytea":
                     return NpgsqlDbType.Bytea;
+                case "tsrange":
+                    return NpgsqlDbType.Range;
                 default:
 
                     if (info.ColumnTypeExtra.Equals("array", StringComparison.OrdinalIgnoreCase))

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NpgsqlTypes;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -21,6 +22,9 @@ namespace Npgsql.Bulk.DAL
 
         [Column("postal_code"), Required()]
         public string PostalCode { get; set; }
+
+        [Column("range")]
+        public NpgsqlRange<DateTime> Duration { get; set; }
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }

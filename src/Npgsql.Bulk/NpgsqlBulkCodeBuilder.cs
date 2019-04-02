@@ -151,6 +151,10 @@ namespace Npgsql.Bulk
                             ilOut.Emit(OpCodes.Callvirt, writeMethodShort.MakeGenericMethod(toArrayLocal.ReturnType));
                         }
                     }
+                    else if (info.NpgsqlType == NpgsqlTypes.NpgsqlDbType.Range)
+                    {
+                        ilOut.Emit(OpCodes.Callvirt, writeMethodShort.MakeGenericMethod(mi.ReturnType));
+                    }
                     else if (mi.ReturnType.GetTypeInfo().IsEnum)
                     {
                         ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
