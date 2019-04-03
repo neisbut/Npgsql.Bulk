@@ -97,6 +97,11 @@ namespace Npgsql.Bulk
                 case "bytea":
                     return NpgsqlDbType.Bytea;
                 case "tsrange":
+                case "int4range":
+                case "int8range":
+                case "numrange":
+                case "tstzrange":
+                case "daterange":
                     return NpgsqlDbType.Range;
                 default:
 

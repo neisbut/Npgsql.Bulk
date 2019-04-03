@@ -187,12 +187,20 @@ namespace Npgsql.Bulk
                     ilOut.Emit(OpCodes.Ldloca, localVar);
                     ilOut.Emit(OpCodes.Call, mi.ReturnType.GetMethod("get_Value"));
 
-                    ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
-
                     if (underlying.IsEnum)
+                    {
+                        ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
                         ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(typeof(int)));
+                    }
+                    else if (info.NpgsqlType == NpgsqlTypes.NpgsqlDbType.Range)
+                    {
+                        ilOut.Emit(OpCodes.Callvirt, writeMethodShort.MakeGenericMethod(underlying));
+                    }
                     else
+                    {
+                        ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
                         ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(underlying));
+                    }
 
                     ilOut.Emit(OpCodes.Br_S, outLbl);
 
