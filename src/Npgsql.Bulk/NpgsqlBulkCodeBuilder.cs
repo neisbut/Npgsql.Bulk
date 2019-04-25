@@ -158,7 +158,7 @@ namespace Npgsql.Bulk
                     else if (mi.ReturnType.GetTypeInfo().IsEnum)
                     {
                         ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
-                        ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(typeof(Int32)));
+                        ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(Enum.GetUnderlyingType(mi.ReturnType.GetTypeInfo())));
                     }
                     else
                     {
@@ -190,7 +190,7 @@ namespace Npgsql.Bulk
                     if (underlying.IsEnum)
                     {
                         ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
-                        ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(typeof(int)));
+                        ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(Enum.GetUnderlyingType(underlying)));
                     }
                     else if (info.NpgsqlType == NpgsqlTypes.NpgsqlDbType.Range)
                     {
