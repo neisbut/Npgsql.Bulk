@@ -277,7 +277,12 @@ namespace Npgsql.Bulk
             }
             catch
             {
-                transaction?.Rollback();
+                try
+                {
+                    transaction?.Rollback();
+                }
+                catch { }
+
                 throw;
             }
             finally
@@ -352,7 +357,12 @@ namespace Npgsql.Bulk
             }
             catch
             {
-                transaction?.Rollback();
+                try
+                {
+                    transaction?.Rollback();
+                }
+                catch { }
+
                 throw;
             }
             finally
@@ -400,7 +410,12 @@ namespace Npgsql.Bulk
             }
             catch
             {
-                transaction?.Rollback();
+                try
+                {
+                    transaction?.Rollback();
+                }
+                catch { }
+
                 throw;
             }
             finally
