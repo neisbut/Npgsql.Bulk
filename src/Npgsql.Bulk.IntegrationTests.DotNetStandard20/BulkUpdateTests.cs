@@ -11,14 +11,8 @@ namespace Npgsql.Bulk.IntegrationTests.DotNetStandard20
 {
     public class BulkUpdateTests
     {
-        public BulkContext CreateContext()
-        {
-            return new BulkContextFactory()
-                .CreateDbContext(new string[0]);
-        }
-
         [Fact]
-        public async Task Update_ColumnsAreSpecified_UpdatesOnlyTheseColumns()
+        public async Task Update_RecordsAreUpdated()
         {
             const string initialStreetName = "Initial Street";
             const string finalStreetName = "Final Street";
@@ -47,12 +41,18 @@ namespace Npgsql.Bulk.IntegrationTests.DotNetStandard20
 
 
             var bulkImport = new NpgsqlBulkUploader(CreateContext());
-            bulkImport.Update(new[] {address}, addr => addr.StreetName);
+            bulkImport.Update(new[] {address});
 
 
             var actualAddress = await CreateContext().Addresses.SingleAsync(x => x.AddressId == addressId);
             actualAddress.StreetName.Should().BeEquivalentTo(finalStreetName);
-            actualAddress.PostalCode.Should().BeEquivalentTo(initialPostalCode);
+            actualAddress.PostalCode.Should().BeEquivalentTo(finalPostalCode);
+        }
+
+        private BulkContext CreateContext()
+        {
+            return new BulkContextFactory()
+                .CreateDbContext(new string[0]);
         }
 
         private async Task AddEntityToContext(Address address)
