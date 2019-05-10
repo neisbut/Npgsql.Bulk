@@ -3,14 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 using System;
+using Npgsql.Bulk.SampleRunner.DotNetStandard20.DAL;
 
 namespace Npgsql.Bulk.DAL
 {
     public class BulkContext : DbContext
     {
         public DbSet<Address> Addresses { get; set; }
-
-        public DbSet<Address2> Addresses2 { get; set; }
 
         public BulkContext(DbContextOptions<BulkContext> options) : base(options) { }
 

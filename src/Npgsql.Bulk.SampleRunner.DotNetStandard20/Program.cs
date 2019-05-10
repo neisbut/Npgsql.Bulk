@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using Npgsql.Bulk.SampleRunner.DotNetStandard20.DAL;
 
 namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 {
@@ -20,7 +21,7 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
             var extraNumbers = new int?[] { null, 1, 2, 3, 5, 8, 13, 21, 34 };
 
             var optionsBuilder = new DbContextOptionsBuilder<BulkContext>();
-            optionsBuilder.UseNpgsql("server=localhost;user id=postgres;password=qwerty;database=copy;port=5432");
+            optionsBuilder.UseNpgsql(Configuration.ConnectionString);
 
             var context = new BulkContext(optionsBuilder.Options);
             context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
