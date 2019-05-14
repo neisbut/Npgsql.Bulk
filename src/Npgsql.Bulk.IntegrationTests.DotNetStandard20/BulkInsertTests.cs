@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using NpgsSqlBulk.DbContext.DotNetStandard20.DAL;
+using Npgsql.Bulk.SampleRunner.DotNetStandard20.DAL;
 using Xunit;
 using static Npgsql.Bulk.IntegrationTests.DotNetStandard20.ContextExtensions;
 

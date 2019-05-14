@@ -1,8 +1,9 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using NpgsSqlBulk.DbContext.DotNetStandard20;
-using NpgsSqlBulk.DbContext.DotNetStandard20.DAL;
+using Npgsql.Bulk.DAL;
+using Npgsql.Bulk.SampleRunner.DotNetStandard20;
+using Npgsql.Bulk.SampleRunner.DotNetStandard20.DAL;
 
 namespace Npgsql.Bulk.IntegrationTests.DotNetStandard20
 {

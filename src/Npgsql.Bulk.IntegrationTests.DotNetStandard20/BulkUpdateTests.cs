@@ -1,10 +1,8 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using NpgsSqlBulk.DbContext.DotNetStandard20;
-using NpgsSqlBulk.DbContext.DotNetStandard20.DAL;
+using Npgsql.Bulk.SampleRunner.DotNetStandard20.DAL;
 using Xunit;
 using static Npgsql.Bulk.IntegrationTests.DotNetStandard20.ContextExtensions;
 
@@ -45,7 +43,9 @@ namespace Npgsql.Bulk.IntegrationTests.DotNetStandard20
             bulkImport.Update(new[] {address});
 
 
-            var actualAddress = await CreateContext().Addresses.SingleAsync(x => x.AddressId == addressId);
+            var actualAddress = await CreateContext().Addresses
+                .SingleAsync(x => x.AddressId == addressId);
+            
             actualAddress.StreetName.Should().BeEquivalentTo(finalStreetName);
             actualAddress.PostalCode.Should().BeEquivalentTo(finalPostalCode);
         }
