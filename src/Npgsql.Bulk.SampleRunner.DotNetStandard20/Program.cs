@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Npgsql.Bulk.SampleRunner.DotNetStandard20.DAL;
+using System.Transactions;
 
 namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 {
@@ -25,7 +26,7 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 
             var context = new BulkContext(optionsBuilder.Options);
             context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
-            
+
             var data = Enumerable.Range(0, 100000)
                 .Select((x, i) => new Address()
                 {
@@ -44,6 +45,7 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
             uploader.Insert(data);
             sw.Stop();
             Console.WriteLine($"Dynamic solution inserted {data.Count} records for {sw.Elapsed }");
+            Trace.Assert(context.Addresses.Count() == data.Count);
 
             data.ForEach(x => x.HouseNumber += 1);
 
@@ -57,6 +59,20 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
             uploader.Import(data);
             sw.Stop();
             Console.WriteLine($"Dynamic solution imported {data.Count} records for {sw.Elapsed }");
+
+            // With transaction
+            context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
+
+            using (var transaction = new TransactionScope())
+            {
+                uploader.Insert(data);
+            }
+            Trace.Assert(context.Addresses.Count() == 0);
+
+            sw = Stopwatch.StartNew();
+            uploader.Update(data);
+            sw.Stop();
+            Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed } (after transaction scope)");
 
             Console.ReadLine();
         }
