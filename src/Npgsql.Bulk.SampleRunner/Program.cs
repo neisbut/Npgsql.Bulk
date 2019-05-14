@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Transactions;
 
 namespace Npgsql.Bulk
 {
@@ -80,6 +82,63 @@ namespace Npgsql.Bulk
             uploader.Import(data);
             sw.Stop();
             Console.WriteLine($"Dynamic solution imported {data.Count} records for {sw.Elapsed }");
+
+            // With transaction
+            context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
+
+            using (var transaction = new TransactionScope())
+            {
+                uploader.Insert(data);
+            }
+            Trace.Assert(context.Addresses.Count() == 0);
+
+            sw = Stopwatch.StartNew();
+            uploader.Update(data);
+            sw.Stop();
+            Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed } (after transaction scope)");
+
+            TestAsync(context, uploader, data).Wait();
+        }
+
+        static async Task TestAsync(BulkContext context, NpgsqlBulkUploader uploader, List<Address> data)
+        {
+            Console.WriteLine("");
+            Console.WriteLine("ASYNC version...");
+            Console.WriteLine("");
+
+
+            var sw = Stopwatch.StartNew();
+            await uploader.InsertAsync(data);
+            sw.Stop();
+            Console.WriteLine($"Dynamic solution inserted {data.Count} records for {sw.Elapsed }");
+            Trace.Assert(context.Addresses.Count() == data.Count);
+
+            data.ForEach(x => x.HouseNumber += 1);
+
+            sw = Stopwatch.StartNew();
+            await uploader.UpdateAsync(data);
+            sw.Stop();
+            Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed }");
+
+            context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
+            sw = Stopwatch.StartNew();
+            await uploader.ImportAsync(data);
+            sw.Stop();
+            Console.WriteLine($"Dynamic solution imported {data.Count} records for {sw.Elapsed }");
+
+            // With transaction
+            context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
+
+            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                await uploader.InsertAsync(data);
+            }
+            Trace.Assert(context.Addresses.Count() == 0);
+
+            sw = Stopwatch.StartNew();
+            await uploader.UpdateAsync(data);
+            sw.Stop();
+            Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed } (after transaction scope)");
         }
 
         static void TestInheritanceCase()
@@ -180,6 +239,7 @@ namespace Npgsql.Bulk
                 queries.Select(x => new { x.HouseNumber }).Distinct().ToList());
             sw.Stop();
             Console.WriteLine($"BulkSelect (Contains) extracted {result.Count} records for {sw.Elapsed }");
+            
             Console.WriteLine();
         }
 
