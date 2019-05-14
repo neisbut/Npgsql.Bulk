@@ -17,7 +17,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.DotNetStandard2
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.DotNetStandard15", "Npgsql.Bulk.DotNetStandard15\Npgsql.Bulk.DotNetStandard15.csproj", "{F997B7C2-67B1-4B65-9C53-26FAA5306A48}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.SampleRunner.DotNetStandard20", "Npgsql.Bulk.SampleRunner.DotNetStandard20\Npgsql.Bulk.SampleRunner.DotNetStandard20.csproj", "{C7B2A083-6BB9-49BE-9A3E-A09EC62CD405}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.SampleRunner.DotNetStandard20", "Npgsql.Bulk.SampleRunner.DotNetStandard20\Npgsql.Bulk.SampleRunner.DotNetStandard20.csproj", "{C7B2A083-6BB9-49BE-9A3E-A09EC62CD405}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
