@@ -48,7 +48,16 @@ namespace Npgsql.Bulk
             DbContext context, IsolationLevel isolation)
         {
             if (context.Database.CurrentTransaction == null)
+            {
+                if (System.Transactions.Transaction.Current != null)
+                {
+                    //System.Transactions.TransactionsDatabaseFacadeExtensions.EnlistTransaction(context.Database, System.Transactions.Transaction.Current);
+                    return null;
+                }
+
                 return context.Database.BeginTransaction(isolation);
+            }
+
             return null;
         }
 
