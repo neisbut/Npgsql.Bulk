@@ -36,7 +36,7 @@ namespace Npgsql.Bulk
             {
                 if (System.Transactions.Transaction.Current != null)
                 {
-                    System.Transactions.TransactionsDatabaseFacadeExtensions.EnlistTransaction(context.Database, System.Transactions.Transaction.Current);
+                    //System.Transactions.TransactionsDatabaseFacadeExtensions.EnlistTransaction(context.Database, System.Transactions.Transaction.Current);
                     return null;
                 }
 
