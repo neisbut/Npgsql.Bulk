@@ -1,11 +1,10 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using NpgsSqlBulk.DbContext.DotNetStandard20;
-using NpgsSqlBulk.DbContext.DotNetStandard20.DAL;
+using Npgsql.Bulk.SampleRunner.DotNetStandard20.DAL;
 using Xunit;
+using static Npgsql.Bulk.IntegrationTests.DotNetStandard20.ContextExtensions;
 
 namespace Npgsql.Bulk.IntegrationTests.DotNetStandard20
 {
@@ -22,7 +21,7 @@ namespace Npgsql.Bulk.IntegrationTests.DotNetStandard20
 
             const int addressId = 200000;
 
-            await DeleteAddressIfExists(addressId);
+            await DeleteIfExists(addressId);
 
             var address = new Address
             {
@@ -34,7 +33,7 @@ namespace Npgsql.Bulk.IntegrationTests.DotNetStandard20
                 Duration = new NpgsqlTypes.NpgsqlRange<DateTime>(DateTime.Now, DateTime.Now)
             };
 
-            await AddEntityToContext(address);
+            await AddToDb(address);
 
             address.StreetName = finalStreetName;
             address.PostalCode = finalPostalCode;
@@ -44,35 +43,11 @@ namespace Npgsql.Bulk.IntegrationTests.DotNetStandard20
             bulkImport.Update(new[] {address});
 
 
-            var actualAddress = await CreateContext().Addresses.SingleAsync(x => x.AddressId == addressId);
+            var actualAddress = await CreateContext().Addresses
+                .SingleAsync(x => x.AddressId == addressId);
+            
             actualAddress.StreetName.Should().BeEquivalentTo(finalStreetName);
             actualAddress.PostalCode.Should().BeEquivalentTo(finalPostalCode);
-        }
-
-        private BulkContext CreateContext()
-        {
-            return new BulkContextFactory()
-                .CreateDbContext(new string[0]);
-        }
-
-        private async Task AddEntityToContext(Address address)
-        {
-            var addContext = CreateContext();
-            addContext.Add(address);
-            await addContext.SaveChangesAsync();
-        }
-
-        private async Task DeleteAddressIfExists(int addressId)
-        {
-            var deleteContext = CreateContext();
-            var foundAddress = await deleteContext.Addresses
-                .SingleOrDefaultAsync(x => x.AddressId == addressId);
-
-            if (foundAddress != null)
-            {
-                deleteContext.Remove(foundAddress);
-                await deleteContext.SaveChangesAsync();
-            }
         }
     }
 }

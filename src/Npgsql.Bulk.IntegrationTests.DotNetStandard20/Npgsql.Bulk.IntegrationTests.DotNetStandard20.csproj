@@ -15,7 +15,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Npgsql.Bulk.DotNetStandard20\Npgsql.Bulk.DotNetStandard20.csproj" />
-      <ProjectReference Include="..\NpgsSqlBulk.DbContext.DotNetStandard20\NpgsSqlBulk.DbContext.DotNetStandard20.csproj" />
+      <ProjectReference Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Npgsql.Bulk.SampleRunner.DotNetStandard20.csproj" />
     </ItemGroup>
 
 </Project>
