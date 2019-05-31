@@ -9,7 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\Npgsql.Bulk.DotNetStandard15\NpgsqlHelper.cs" Link="NpgsqlHelper.cs" />
     <Compile Include="..\Npgsql.Bulk\BulkMappingSourceAttribute.cs" Link="BulkMappingSourceAttribute.cs" />
     <Compile Include="..\Npgsql.Bulk\BulkOperationModification.cs" Link="BulkOperationModification.cs" />
     <Compile Include="..\Npgsql.Bulk\BulkOperationModifierAttribute.cs" Link="BulkOperationModifierAttribute.cs" />
