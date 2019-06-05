@@ -1,5 +1,6 @@
 ﻿using Npgsql.Bulk.Model;
 using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -30,30 +31,42 @@ namespace Npgsql.Bulk
 
         public static InsertConflictAction DoNothingConstraint(string constraint) => DoNothing($"ON CONSTRAINT {constraint}");
 
-        public static InsertConflictAction Update<T>(string conflictTargetSql, params Expression<Func<T, object>>[] updateProperties) => new InsertConflictAction()
+        public static InsertConflictAction Update<T>(string conflictTargetSql, params Expression<Func<T, object>>[] updateProperties) => Update<T>(conflictTargetSql, updateProperties.Select(UnwrapProperty).ToArray());
+        
+        public static InsertConflictAction Update<T>(string conflictTargetSql, params PropertyInfo[] updateProperties) => new InsertConflictAction
         {
             doUpdate = true,
             conflictTarget = conflictTargetSql,
             updateProperties = updateProperties
         };
 
-        public static InsertConflictAction UpdateProperty<T>(Expression<Func<T, object>> conflictProperty, params Expression<Func<T, object>>[] updateProperties) => new InsertConflictAction()
+        public static InsertConflictAction UpdateProperty<T>(Expression<Func<T, object>> conflictProperty, params Expression<Func<T, object>>[] updateProperties) => UpdateProperty<T>(UnwrapProperty(conflictProperty), updateProperties.Select(UnwrapProperty).ToArray());
+
+        public static InsertConflictAction UpdateProperty<T>(Expression<Func<T, object>> conflictProperty, params PropertyInfo[] updateProperties) => UpdateProperty<T>(UnwrapProperty(conflictProperty), updateProperties);
+
+        public static InsertConflictAction UpdateProperty<T>(PropertyInfo conflictProperty, params PropertyInfo[] updateProperties) => new InsertConflictAction
         {
             doUpdate = true,
             conflictProperty = conflictProperty,
             updateProperties = updateProperties
         };
 
-        public static InsertConflictAction UpdateColumn<T>(string columnName, params Expression<Func<T, object>>[] updateProperties) => Update($"({columnName})", updateProperties);
+        public static InsertConflictAction UpdateColumn<T>(string columnName, params Expression<Func<T, object>>[] updateProperties) => UpdateColumn<T>(columnName, updateProperties.Select(UnwrapProperty).ToArray());
 
-        public static InsertConflictAction UpdateIndex<T>(string indexName, params Expression<Func<T, object>>[] updateProperties) => Update($"({indexName})", updateProperties);
+        public static InsertConflictAction UpdateColumn<T>(string columnName, params PropertyInfo[] updateProperties) => Update<T>($"({columnName})", updateProperties);
 
-        public static InsertConflictAction UpdateConstraint<T>(string constraint, params Expression<Func<T, object>>[] updateProperties) => Update($"ON CONSTRAINT {constraint}", updateProperties);
+        public static InsertConflictAction UpdateIndex<T>(string indexName, params Expression<Func<T, object>>[] updateProperties) => UpdateIndex<T>(indexName, updateProperties.Select(UnwrapProperty).ToArray());
+
+        public static InsertConflictAction UpdateIndex<T>(string indexName, params PropertyInfo[] updateProperties) => Update<T>($"({indexName})", updateProperties);
+
+        public static InsertConflictAction UpdateConstraint<T>(string constraint, params Expression<Func<T, object>>[] updateProperties) => UpdateConstraint<T>(constraint, updateProperties.Select(UnwrapProperty).ToArray());
+
+        public static InsertConflictAction UpdateConstraint<T>(string constraint, params PropertyInfo[] updateProperties) => Update<T>($"ON CONSTRAINT {constraint}", updateProperties);
 
         bool doUpdate;
         string conflictTarget;
-        LambdaExpression conflictProperty;
-        LambdaExpression[] updateProperties;
+        PropertyInfo conflictProperty;
+        PropertyInfo[] updateProperties;
 
         /// <summary>
         /// ctor for DO NOTHING case
@@ -63,7 +76,7 @@ namespace Npgsql.Bulk
         {
         }
 
-        PropertyInfo UnwrapProperty(LambdaExpression expression)
+        internal static PropertyInfo UnwrapProperty(LambdaExpression expression)
         {
             var propExpression = expression.Body;
             while (propExpression.GetType() == typeof(UnaryExpression))
@@ -94,7 +107,7 @@ namespace Npgsql.Bulk
 
                 if (conflictProperty != null)
                 {
-                    if (!mapping.PropToMappingInfo.TryGetValue(UnwrapProperty(conflictProperty), out MappingInfo info))
+                    if (!mapping.PropToMappingInfo.TryGetValue(conflictProperty, out MappingInfo info))
                         throw new InvalidOperationException($"Can't find property {conflictProperty} in mapping");
 
                     conflictTarget = $"({NpgsqlHelper.GetQualifiedName(info.ColumnInfo.ColumnName)})";
@@ -102,10 +115,8 @@ namespace Npgsql.Bulk
 
                 var sb = new StringBuilder(100);
                 sb.Append("DO UPDATE SET ");
-                foreach (var expr in updateProperties)
+                foreach (var updateProp in updateProperties)
                 {
-                    var updateProp = UnwrapProperty(expr);
-
                     if (!mapping.PropToMappingInfo.TryGetValue(updateProp, out MappingInfo info))
                         throw new InvalidOperationException($"Can't find property {updateProp} in mapping");
 
