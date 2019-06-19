@@ -16,7 +16,7 @@ namespace Npgsql.Bulk.Model
 
         public List<MappingInfo> MappingInfos { get; set; }
 
-        public Dictionary<PropertyInfo, MappingInfo> PropToMappingInfo { get; set; }
+        public Dictionary<string, MappingInfo> PropToMappingInfo { get; set; }
 
         public string SelectSourceForInsertQuery { get; set; }
 

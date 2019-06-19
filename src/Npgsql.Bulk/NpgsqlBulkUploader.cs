@@ -774,7 +774,7 @@ namespace Npgsql.Bulk
                 TableName = tableName,
                 CodeBuilder = codeBuilder,
                 MappingInfos = mappingInfo,
-                PropToMappingInfo = mappingInfo.ToDictionary(x => x.Property),
+                PropToMappingInfo = mappingInfo.ToDictionary(x => x.Property.Name),
                 TableNames = mappingInfo.Select(x => x.TableName).Distinct().ToArray(),
                 ClientDataInfos = mappingInfo.Where(x => !x.IsDbGenerated).ToArray(),
                 ClientDataWithKeysInfos = mappingInfo.Where(x => !x.IsDbGenerated || x.IsKey).ToArray()

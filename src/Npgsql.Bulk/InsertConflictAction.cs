@@ -107,7 +107,7 @@ namespace Npgsql.Bulk
 
                 if (conflictProperty != null)
                 {
-                    if (!mapping.PropToMappingInfo.TryGetValue(conflictProperty, out MappingInfo info))
+                    if (!mapping.PropToMappingInfo.TryGetValue(conflictProperty.Name, out MappingInfo info))
                         throw new InvalidOperationException($"Can't find property {conflictProperty} in mapping");
 
                     conflictTarget = $"({NpgsqlHelper.GetQualifiedName(info.ColumnInfo.ColumnName)})";
@@ -117,7 +117,7 @@ namespace Npgsql.Bulk
                 sb.Append("DO UPDATE SET ");
                 foreach (var updateProp in updateProperties)
                 {
-                    if (!mapping.PropToMappingInfo.TryGetValue(updateProp, out MappingInfo info))
+                    if (!mapping.PropToMappingInfo.TryGetValue(updateProp.Name, out MappingInfo info))
                         throw new InvalidOperationException($"Can't find property {updateProp} in mapping");
 
                     sb.Append(NpgsqlHelper.GetQualifiedName(info.ColumnInfo.ColumnName));
