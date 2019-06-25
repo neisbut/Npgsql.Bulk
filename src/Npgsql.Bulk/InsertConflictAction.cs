@@ -31,8 +31,9 @@ namespace Npgsql.Bulk
 
         public static InsertConflictAction DoNothingConstraint(string constraint) => DoNothing($"ON CONSTRAINT {constraint}");
 
-        public static InsertConflictAction Update<T>(string conflictTargetSql, params Expression<Func<T, object>>[] updateProperties) => Update<T>(conflictTargetSql, updateProperties.Select(UnwrapProperty).ToArray());
-        
+        public static InsertConflictAction Update<T>(string conflictTargetSql, params Expression<Func<T, object>>[] updateProperties) =>
+            Update<T>(conflictTargetSql, updateProperties.Select(UnwrapProperty<T>).ToArray());
+
         public static InsertConflictAction Update<T>(string conflictTargetSql, params PropertyInfo[] updateProperties) => new InsertConflictAction
         {
             doUpdate = true,
@@ -40,9 +41,11 @@ namespace Npgsql.Bulk
             updateProperties = updateProperties
         };
 
-        public static InsertConflictAction UpdateProperty<T>(Expression<Func<T, object>> conflictProperty, params Expression<Func<T, object>>[] updateProperties) => UpdateProperty<T>(UnwrapProperty(conflictProperty), updateProperties.Select(UnwrapProperty).ToArray());
+        public static InsertConflictAction UpdateProperty<T>(Expression<Func<T, object>> conflictProperty, params Expression<Func<T, object>>[] updateProperties) =>
+            UpdateProperty<T>(UnwrapProperty<T>(conflictProperty), updateProperties.Select(UnwrapProperty<T>).ToArray());
 
-        public static InsertConflictAction UpdateProperty<T>(Expression<Func<T, object>> conflictProperty, params PropertyInfo[] updateProperties) => UpdateProperty<T>(UnwrapProperty(conflictProperty), updateProperties);
+        public static InsertConflictAction UpdateProperty<T>(Expression<Func<T, object>> conflictProperty, params PropertyInfo[] updateProperties) =>
+            UpdateProperty<T>(UnwrapProperty<T>(conflictProperty), updateProperties);
 
         public static InsertConflictAction UpdateProperty<T>(PropertyInfo conflictProperty, params PropertyInfo[] updateProperties) => new InsertConflictAction
         {
@@ -51,17 +54,21 @@ namespace Npgsql.Bulk
             updateProperties = updateProperties
         };
 
-        public static InsertConflictAction UpdateColumn<T>(string columnName, params Expression<Func<T, object>>[] updateProperties) => UpdateColumn<T>(columnName, updateProperties.Select(UnwrapProperty).ToArray());
+        public static InsertConflictAction UpdateColumn<T>(string columnName, params Expression<Func<T, object>>[] updateProperties) =>
+            UpdateColumn<T>(columnName, updateProperties.Select(UnwrapProperty<T>).ToArray());
 
         public static InsertConflictAction UpdateColumn<T>(string columnName, params PropertyInfo[] updateProperties) => Update<T>($"({columnName})", updateProperties);
 
-        public static InsertConflictAction UpdateIndex<T>(string indexName, params Expression<Func<T, object>>[] updateProperties) => UpdateIndex<T>(indexName, updateProperties.Select(UnwrapProperty).ToArray());
+        public static InsertConflictAction UpdateIndex<T>(string indexName, params Expression<Func<T, object>>[] updateProperties) =>
+            UpdateIndex<T>(indexName, updateProperties.Select(UnwrapProperty<T>).ToArray());
 
         public static InsertConflictAction UpdateIndex<T>(string indexName, params PropertyInfo[] updateProperties) => Update<T>($"({indexName})", updateProperties);
 
-        public static InsertConflictAction UpdateConstraint<T>(string constraint, params Expression<Func<T, object>>[] updateProperties) => UpdateConstraint<T>(constraint, updateProperties.Select(UnwrapProperty).ToArray());
+        public static InsertConflictAction UpdateConstraint<T>(string constraint, params Expression<Func<T, object>>[] updateProperties) =>
+            UpdateConstraint<T>(constraint, updateProperties.Select(UnwrapProperty<T>).ToArray());
 
-        public static InsertConflictAction UpdateConstraint<T>(string constraint, params PropertyInfo[] updateProperties) => Update<T>($"ON CONSTRAINT {constraint}", updateProperties);
+        public static InsertConflictAction UpdateConstraint<T>(string constraint, params PropertyInfo[] updateProperties) =>
+            Update<T>($"ON CONSTRAINT {constraint}", updateProperties);
 
         bool doUpdate;
         string conflictTarget;
@@ -76,7 +83,7 @@ namespace Npgsql.Bulk
         {
         }
 
-        internal static PropertyInfo UnwrapProperty(LambdaExpression expression)
+        internal static PropertyInfo UnwrapProperty<T>(LambdaExpression expression)
         {
             var propExpression = expression.Body;
             while (propExpression.GetType() == typeof(UnaryExpression))
@@ -87,7 +94,21 @@ namespace Npgsql.Bulk
             var updateMember = ((MemberExpression)propExpression).Member;
             if (updateMember.MemberType != MemberTypes.Property)
                 throw new InvalidOperationException($"Property was expected, but got: '{updateMember.MemberType}'");
-            return (PropertyInfo)updateMember;
+
+            var pi = (PropertyInfo)updateMember;
+
+            if (!updateMember.DeclaringType.IsInterface)
+                return pi;
+            else
+            {
+                var map = typeof(T).GetInterfaceMap(updateMember.DeclaringType);
+                var getInInterface = pi.GetGetMethod();
+                var i = Array.IndexOf(map.InterfaceMethods, getInInterface);
+                var getInClass = map.TargetMethods[i];
+                var pc = typeof(T).GetProperties().First(x => x.GetGetMethod() == getInClass);
+
+                return pc;
+            }
         }
 
         internal object GetSql(EntityInfo mapping)

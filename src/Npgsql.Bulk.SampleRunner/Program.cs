@@ -77,7 +77,9 @@ namespace Npgsql.Bulk
             sw.Stop();
             Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed }");
 
-            context.Database.ExecuteSqlCommand("DELETE FROM addresses");
+            TestViaInterfaceCase(data, context);
+
+            context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
             sw = Stopwatch.StartNew();
             uploader.Import(data);
             sw.Stop();
@@ -239,8 +241,21 @@ namespace Npgsql.Bulk
                 queries.Select(x => new { x.HouseNumber }).Distinct().ToList());
             sw.Stop();
             Console.WriteLine($"BulkSelect (Contains) extracted {result.Count} records for {sw.Elapsed }");
-            
+
             Console.WriteLine();
+        }
+
+        static void TestViaInterfaceCase<T>(IEnumerable<T> data, DbContext context) where T : IHasId
+        {
+            var uploader = new NpgsqlBulkUploader(context);
+
+            var properties = data
+                .First()
+                .GetType()
+                .GetProperties()
+                .ToArray();
+
+            uploader.Insert(data, InsertConflictAction.UpdateProperty<T>(x => x.AddressId, properties));
         }
 
         class BulkSelect

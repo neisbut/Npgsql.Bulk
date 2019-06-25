@@ -6,6 +6,7 @@ using Npgsql.Bulk.DAL;
 using Npgsql.Bulk.SampleRunner.DotNetStandard20.DAL;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -47,6 +48,10 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
             sw.Stop();
             Console.WriteLine($"Dynamic solution inserted {data.Count} records for {sw.Elapsed }");
             Trace.Assert(context.Addresses.Count() == data.Count);
+
+            context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
+
+            TestViaInterfaceCase(data, context);
 
             data.ForEach(x => x.HouseNumber += 1);
 
@@ -119,6 +124,20 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
             await uploader.UpdateAsync(data);
             sw.Stop();
             Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed } (after transaction scope)");
+        }
+
+        static void TestViaInterfaceCase<T>(IEnumerable<T> data, DbContext context) where T : IHasId
+        {
+            var uploader = new NpgsqlBulkUploader(context);
+
+            var properties = data
+                .First()
+                .GetType()
+                .GetProperties()
+                .Where(x=>x.GetCustomAttribute<ColumnAttribute>() != null)
+                .ToArray();
+
+            uploader.Insert(data, InsertConflictAction.UpdateProperty<T>(x => x.AddressId, properties));
         }
     }
 }

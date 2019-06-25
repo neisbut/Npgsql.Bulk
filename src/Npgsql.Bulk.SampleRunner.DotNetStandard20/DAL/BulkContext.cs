@@ -20,6 +20,8 @@ namespace Npgsql.Bulk.DAL
             modelBuilder.Entity<Address>().Property(x => x.CreatedAt)
                 .HasValueGenerator<ValueGen>().ValueGeneratedOnAdd();
 
+            modelBuilder.Entity<Address>().HasKey(x => x.AddressId);
+
         }
     }
 

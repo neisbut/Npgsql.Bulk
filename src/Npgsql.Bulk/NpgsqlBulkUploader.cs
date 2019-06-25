@@ -13,6 +13,7 @@ using System.Reflection;
 using Npgsql.Bulk.Model;
 using System.Data;
 using System.Threading.Tasks;
+using System.Reflection.Emit;
 
 namespace Npgsql.Bulk
 {

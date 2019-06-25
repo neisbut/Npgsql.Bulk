@@ -7,10 +7,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Npgsql.Bulk.DAL
 {
     [Table("addresses", Schema = "public")]
-    public class Address
+    public class Address : IHasId, IHasId2
     {
         [Column("address_id"), Key(), DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int AddressId { get; set; }
+
+        [NotMapped]
+        int IHasId2.AddressId { get; set; }
 
         [Column("street_name"), Required()]
         public string StreetName { get; set; }

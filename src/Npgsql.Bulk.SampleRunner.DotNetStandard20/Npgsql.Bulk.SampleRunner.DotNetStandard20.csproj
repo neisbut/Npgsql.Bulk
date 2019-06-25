@@ -6,6 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\Npgsql.Bulk.SampleRunner\DAL\IHasId.cs" Link="DAL\IHasId.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner\DAL\IHasId2.cs" Link="DAL\IHasId2.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.2.4" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.1.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.1" />
