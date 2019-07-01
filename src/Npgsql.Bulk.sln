@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{94D57DF4-8116-44A2-9BDA-402E47D45F38}"
 	ProjectSection(SolutionItems) = preProject
 		CreatePackage.bat = CreatePackage.bat
+		Package-core.nuspec = Package-core.nuspec
 		Package.nuspec = Package.nuspec
 	EndProjectSection
 EndProject

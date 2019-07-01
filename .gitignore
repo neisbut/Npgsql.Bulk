@@ -292,3 +292,4 @@ __pycache__/
 /src/Npgsql.Bulk.MesitisTest
 /src/Npgsql.Bulk.MesitisTest.sln
 /src/Npgsql.Bulk.MesitisTest.Core
+/src/*.nuspec
