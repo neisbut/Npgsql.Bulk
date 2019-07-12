@@ -53,7 +53,7 @@ namespace Npgsql.Bulk
             EntityInfo entityInfo,
             Func<Type, NpgsqlDataReader, string, object> readerFunc)
         {
-            var name = $"{typeof(T).Name}_{DateTime.Now.Ticks}";
+            var name = NpgsqlHelper.GetUniqueName(typeof(T).Name);
             assemblyName = new AssemblyName { Name = name };
 
             assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(

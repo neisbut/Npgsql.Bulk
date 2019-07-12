@@ -191,7 +191,7 @@ namespace Npgsql.Bulk
             try
             {
                 // 0. Prepare variables
-                var tempTableName = "_temp_" + DateTime.Now.Ticks;
+                var tempTableName = NpgsqlHelper.GetUniqueName("_temp_");
                 var list = entities.ToList();
                 var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
 
@@ -322,7 +322,7 @@ namespace Npgsql.Bulk
                 // 0. Prepare variables
                 var dataColumns = mapping.ClientDataWithKeysColumnNames;
                 var tableName = mapping.TableNameQualified;
-                var tempTableName = "_temp_" + DateTime.Now.Ticks;
+                var tempTableName = NpgsqlHelper.GetUniqueName("_temp_");
                 var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
 
                 // 1. Create temp table 
@@ -446,7 +446,7 @@ namespace Npgsql.Bulk
             try
             {
                 // 0. Prepare variables
-                var tempTableName = "_temp_" + DateTime.Now.Ticks;
+                var tempTableName = NpgsqlHelper.GetUniqueName("_temp_");
                 var list = entities.ToList();
                 var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
 
@@ -562,7 +562,7 @@ namespace Npgsql.Bulk
                 // 0. Prepare variables
                 var dataColumns = mapping.ClientDataWithKeysColumnNames;
                 var tableName = mapping.TableNameQualified;
-                var tempTableName = "_temp_" + DateTime.Now.Ticks;
+                var tempTableName = NpgsqlHelper.GetUniqueName("_temp_");
                 var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
 
                 // 1. Create temp table 

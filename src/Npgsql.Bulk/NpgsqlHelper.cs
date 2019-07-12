@@ -187,5 +187,16 @@ namespace Npgsql.Bulk
             var entityType = GetEntitySet(context, t);
             return GetQualifiedName(entityType.Table, entityType.Schema);
         }
+
+        /// <summary>
+        /// Get unique object name using user-defined prefix.
+        /// </summary>
+        /// <param name="prefix">Prefix.</param>
+        /// <returns>Unique name.</returns>
+        internal static string GetUniqueName(string prefix)
+        {
+            var suffix = Guid.NewGuid().ToString().Replace('-', '_');
+            return $"{prefix}{suffix}";
+        }
     }
 }
