@@ -25,7 +25,7 @@ namespace Npgsql.Bulk
 
             BulkSelectInterceptor.StartInterception();
 
-            var keyDataTable = $"_schema_{DateTime.Now.Ticks}";
+            var keyDataTable = NpgsqlHelper.GetUniqueName("_schema_");
             var schemaQuery = source.Select(keyExpression);
             var schemaSql = $"CREATE TEMP TABLE {keyDataTable} ON COMMIT DROP AS ({schemaQuery} LIMIT 0)";
 
