@@ -15,6 +15,7 @@ using System.Data;
 using System.Threading.Tasks;
 using System.Reflection.Emit;
 using System.Threading;
+using System.Linq.Expressions;
 
 namespace Npgsql.Bulk
 {
@@ -29,6 +30,7 @@ namespace Npgsql.Bulk
         private readonly DbContext context;
         private static string uniqueTablePrefix = Guid.NewGuid().ToString().Replace("-", "_");
         private static int tablesCounter = 0;
+        private static readonly ConcurrentDictionary<string, object> partialCodeBuilders = new ConcurrentDictionary<string, object>();
 
         /// <summary>
         /// When transaction needs to be started internally then this IsolationLevel will be used
@@ -312,13 +314,47 @@ namespace Npgsql.Bulk
             }
         }
 
+        /// <summary>
+        /// Bulk update entities
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entities"></param>
         public void Update<T>(IEnumerable<T> entities)
+        {
+            UpdateInternal<T>(entities, GetEntityInfo<T>());
+        }
+
+        /// <summary>
+        /// Bulk update entities of specified properties
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entities"></param>
+        /// <param name="propertiesToUpdate"></param>
+        public void Update<T>(IEnumerable<T> entities,
+            params Expression<Func<T, Object>>[] propertiesToUpdate)
+        {
+            var mapping = CreateEntityInfo<T>(
+                propertiesToUpdate.Select(x => InsertConflictAction.UnwrapProperty<T>(x)).ToArray());
+            UpdateInternal<T>(entities, mapping);
+        }
+
+        /// <summary>
+        /// Bulk update entities of specified properties
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entities"></param>
+        /// <param name="propertiesToUpdate"></param>
+        public void Update<T>(IEnumerable<T> entities, IEnumerable<PropertyInfo> propertiesToUpdate)
+        {
+            var mapping = CreateEntityInfo<T>(propertiesToUpdate);
+            UpdateInternal<T>(entities, mapping);
+        }
+
+        private void UpdateInternal<T>(IEnumerable<T> entities, EntityInfo mapping)
         {
             var conn = NpgsqlHelper.GetNpgsqlConnection(context);
             var connOpenedHere = EnsureConnected(conn);
             var transaction = NpgsqlHelper.EnsureOrStartTransaction(context, DefaultIsolationLevel);
-
-            var mapping = GetEntityInfo<T>();
 
             try
             {
@@ -552,13 +588,42 @@ namespace Npgsql.Bulk
             }
         }
 
-        public async Task UpdateAsync<T>(IEnumerable<T> entities)
+        public Task UpdateAsync<T>(IEnumerable<T> entities)
+        {
+            return UpdateAsyncInternal<T>(entities, GetEntityInfo<T>());
+        }
+
+        /// <summary>
+        /// Bulk update entities of specified properties
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entities"></param>
+        /// <param name="propertiesToUpdate"></param>
+        public Task UpdateAsync<T>(IEnumerable<T> entities,
+            params Expression<Func<T, Object>>[] propertiesToUpdate)
+        {
+            var mapping = CreateEntityInfo<T>(
+                propertiesToUpdate.Select(x => InsertConflictAction.UnwrapProperty<T>(x)).ToArray());
+            return UpdateAsyncInternal<T>(entities, mapping);
+        }
+
+        /// <summary>
+        /// Bulk update entities of specified properties
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entities"></param>
+        /// <param name="propertiesToUpdate"></param>
+        public Task UpdateAsync<T>(IEnumerable<T> entities, IEnumerable<PropertyInfo> propertiesToUpdate)
+        {
+            var mapping = CreateEntityInfo<T>(propertiesToUpdate);
+            return UpdateAsyncInternal<T>(entities, mapping);
+        }
+
+        private async Task UpdateAsyncInternal<T>(IEnumerable<T> entities, EntityInfo mapping)
         {
             var conn = NpgsqlHelper.GetNpgsqlConnection(context);
             var connOpenedHere = await EnsureConnectedAsync(conn);
             var transaction = NpgsqlHelper.EnsureOrStartTransaction(context, DefaultIsolationLevel);
-
-            var mapping = GetEntityInfo<T>();
 
             try
             {
@@ -770,11 +835,54 @@ namespace Npgsql.Bulk
             var t = typeof(T);
             var tableName = NpgsqlHelper.GetTableName(context, t);
             var mappingInfo = GetMappingInfo(t, tableName);
-            var codeBuilder = new NpgsqlBulkCodeBuilder<T>();
+            var tableNameQualified = NpgsqlHelper.GetTableNameQualified(context, t);
+
+            return CreateEntityInfo<T>(tableName, tableNameQualified, mappingInfo);
+        }
+
+        private EntityInfo CreateEntityInfo<T>(IEnumerable<PropertyInfo> props)
+        {
+            var t = typeof(T);
+            var tableName = NpgsqlHelper.GetTableName(context, t);
+            var mappingInfo = GetMappingInfo(t, tableName);
+            var tableNameQualified = NpgsqlHelper.GetTableNameQualified(context, t);
+
+            // filter by props
+            var keyProps = mappingInfo.Where(x => x.IsKey).Select(x => x.Property);
+            var propToInfo = mappingInfo.ToDictionary(x => x.Property);
+            mappingInfo = props.Union(keyProps).Select(x => propToInfo[x]).ToList();
+
+            // key for partial coe builder
+            var propNames = typeof(T).FullName + "_" +
+                string.Join("_", props.Select(x => $"{x.DeclaringType.Name}_{x.Name}"));
+            NpgsqlBulkCodeBuilder<T> codeBuilder;
+            if (partialCodeBuilders.TryGetValue(propNames, out object cb))
+            {
+                codeBuilder = (NpgsqlBulkCodeBuilder<T>)cb;
+                return CreateEntityInfo<T>(tableName, tableNameQualified, mappingInfo, codeBuilder);
+            }
+            else
+            {
+                codeBuilder = new NpgsqlBulkCodeBuilder<T>();
+                var info = CreateEntityInfo<T>(tableName, tableNameQualified, mappingInfo, codeBuilder);
+                codeBuilder.InitBuilder(info, ReadValue);
+                partialCodeBuilders.TryAdd(propNames, codeBuilder);
+
+                return info;
+            }
+        }
+
+        private EntityInfo CreateEntityInfo<T>(
+            string tableName,
+            string tableNameQualified,
+            List<MappingInfo> mappingInfo,
+            NpgsqlBulkCodeBuilder<T> codeBuilderOuter = null)
+        {
+            var codeBuilder = codeBuilderOuter ?? new NpgsqlBulkCodeBuilder<T>();
 
             var info = new EntityInfo()
             {
-                TableNameQualified = NpgsqlHelper.GetTableNameQualified(context, t),
+                TableNameQualified = tableNameQualified,
                 TableName = tableName,
                 CodeBuilder = codeBuilder,
                 MappingInfos = mappingInfo,
@@ -797,7 +905,8 @@ namespace Npgsql.Bulk
                     KeyInfos = x.Where(y => y.IsKey).ToList(),
                     ClientDataInfos = x.Where(y => !y.IsDbGenerated).ToList(),
                     ReturningInfos = x.Where(y => y.IsDbGenerated).ToList()
-                }).ToList();
+                })
+                .ToList();
 
             info.InsertQueryParts = grouppedByTables.Select(x =>
             {
@@ -861,7 +970,9 @@ namespace Npgsql.Bulk
                         return clause;
                     }))
                 };
-            }).ToList();
+            })
+            .Where(x => !string.IsNullOrEmpty(x.SetClause))
+            .ToList();
 
             info.SelectSourceForUpdateQuery = "SELECT " +
                 string.Join(", ", info.ClientDataWithKeysInfos
@@ -885,7 +996,8 @@ namespace Npgsql.Bulk
             info.DbGeneratedColumnNames = string.Join(", ",
                 info.DbGeneratedInfos.Select(x => NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName)));
 
-            codeBuilder.InitBuilder(info, ReadValue);
+            if (codeBuilderOuter == null)
+                codeBuilder.InitBuilder(info, ReadValue);
 
             return info;
         }
@@ -898,7 +1010,7 @@ namespace Npgsql.Bulk
         internal static string GetUniqueName(string prefix)
         {
             var counter = Interlocked.Increment(ref tablesCounter);
-            return $"{prefix}{uniqueTablePrefix}_{counter}";
+            return $"{prefix}_{uniqueTablePrefix}_{counter}";
         }
     }
 }

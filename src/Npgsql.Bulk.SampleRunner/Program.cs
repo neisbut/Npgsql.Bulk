@@ -16,6 +16,7 @@ namespace Npgsql.Bulk
             Console.WriteLine("Trying plain case...");
             TestPlainCase();
             Console.WriteLine();
+
             Console.WriteLine("Trying inheritance case...");
             TestInheritanceCase();
             Console.WriteLine();
@@ -141,6 +142,14 @@ namespace Npgsql.Bulk
             await uploader.UpdateAsync(data);
             sw.Stop();
             Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed } (after transaction scope)");
+
+            // partial update 1
+            sw = Stopwatch.StartNew();
+            data.ForEach(x => x.StreetName = x.StreetName + " upd");
+            await uploader.UpdateAsync(data, x => x.StreetName);
+            sw.Stop();
+            Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed } (partial 1) Async");
+
         }
 
         static void TestInheritanceCase()
@@ -187,6 +196,20 @@ namespace Npgsql.Bulk
             uploader.Update(data);
             sw.Stop();
             Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed }");
+
+            // partial update 1
+            sw = Stopwatch.StartNew();
+            data.ForEach(x => x.StreetName = x.StreetName + " upd");
+            uploader.Update(data, x => x.StreetName);
+            sw.Stop();
+            Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed } (partial 1)");
+
+            // partial update 2
+            sw = Stopwatch.StartNew();
+            data.ForEach(x => x.LocalizedName = x.LocalizedName + " upd");
+            uploader.Update(data, x => x.LocalizedName);
+            sw.Stop();
+            Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed } (partial 2)");
         }
 
         static void TestBulkWhere()
