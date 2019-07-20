@@ -53,7 +53,7 @@ namespace Npgsql.Bulk
             EntityInfo entityInfo,
             Func<Type, NpgsqlDataReader, string, object> readerFunc)
         {
-            var name = NpgsqlHelper.GetUniqueName(typeof(T).Name);
+            var name = NpgsqlBulkUploader.GetUniqueName(typeof(T).Name);
             assemblyName = new AssemblyName { Name = name };
 
             assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(

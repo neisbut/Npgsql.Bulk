@@ -14,6 +14,7 @@ using Npgsql.Bulk.Model;
 using System.Data;
 using System.Threading.Tasks;
 using System.Reflection.Emit;
+using System.Threading;
 
 namespace Npgsql.Bulk
 {
@@ -26,6 +27,8 @@ namespace Npgsql.Bulk
         private static readonly Dictionary<Type, object> EntityInfoLocks = new Dictionary<Type, object>();
 
         private readonly DbContext context;
+        private static string uniqueTablePrefix = Guid.NewGuid().ToString().Replace("-", "_");
+        private static int tablesCounter = 0;
 
         /// <summary>
         /// When transaction needs to be started internally then this IsolationLevel will be used
@@ -191,7 +194,7 @@ namespace Npgsql.Bulk
             try
             {
                 // 0. Prepare variables
-                var tempTableName = NpgsqlHelper.GetUniqueName("_temp_");
+                var tempTableName = GetUniqueName("_temp_");
                 var list = entities.ToList();
                 var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
 
@@ -322,7 +325,7 @@ namespace Npgsql.Bulk
                 // 0. Prepare variables
                 var dataColumns = mapping.ClientDataWithKeysColumnNames;
                 var tableName = mapping.TableNameQualified;
-                var tempTableName = NpgsqlHelper.GetUniqueName("_temp_");
+                var tempTableName = GetUniqueName("_temp_");
                 var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
 
                 // 1. Create temp table 
@@ -446,7 +449,7 @@ namespace Npgsql.Bulk
             try
             {
                 // 0. Prepare variables
-                var tempTableName = NpgsqlHelper.GetUniqueName("_temp_");
+                var tempTableName = GetUniqueName("_temp_");
                 var list = entities.ToList();
                 var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
 
@@ -562,7 +565,7 @@ namespace Npgsql.Bulk
                 // 0. Prepare variables
                 var dataColumns = mapping.ClientDataWithKeysColumnNames;
                 var tableName = mapping.TableNameQualified;
-                var tempTableName = NpgsqlHelper.GetUniqueName("_temp_");
+                var tempTableName = GetUniqueName("_temp_");
                 var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
 
                 // 1. Create temp table 
@@ -885,6 +888,17 @@ namespace Npgsql.Bulk
             codeBuilder.InitBuilder(info, ReadValue);
 
             return info;
+        }
+
+        /// <summary>
+        /// Get unique object name using user-defined prefix.
+        /// </summary>
+        /// <param name="prefix">Prefix.</param>
+        /// <returns>Unique name.</returns>
+        internal static string GetUniqueName(string prefix)
+        {
+            var counter = Interlocked.Increment(ref tablesCounter);
+            return $"{prefix}{uniqueTablePrefix}_{counter}";
         }
     }
 }

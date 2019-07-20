@@ -137,10 +137,6 @@ namespace Npgsql.Bulk
             var relational = context.Model.FindEntityType(t).Relational();
             return GetQualifiedName(relational.TableName, relational.Schema);
         }
-        internal static string GetUniqueName(string prefix)
-        {
-            var suffix = Guid.NewGuid().ToString().Replace('-', '_');
-            return $"{prefix}{suffix}";
-        }
+         
     }
 }
