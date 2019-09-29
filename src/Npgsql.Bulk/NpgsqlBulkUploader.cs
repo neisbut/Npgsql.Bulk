@@ -51,12 +51,35 @@ namespace Npgsql.Bulk
         {
             switch (info.ColumnType)
             {
+                case "interval":
+                    return NpgsqlDbType.Interval;
                 case "integer":
                 case "int":
                 case "int4":
                     return NpgsqlDbType.Integer;
                 case "bool":
+                case "boolean":
                     return NpgsqlDbType.Boolean;
+                case "box":
+                    return NpgsqlDbType.Box;
+                case "circle":
+                    return NpgsqlDbType.Circle;
+                case "line":
+                    return NpgsqlDbType.Line;
+                case "lseg":
+                    return NpgsqlDbType.LSeg;
+                case "money":
+                    return NpgsqlDbType.Money;
+                case "path":
+                    return NpgsqlDbType.Path;
+                case "point":
+                    return NpgsqlDbType.Point;
+                case "polygon":
+                    return NpgsqlDbType.Polygon;
+                case "inet":
+                    return NpgsqlDbType.Inet;
+                case "bit":
+                    return NpgsqlDbType.Bit;
                 case "varchar":
                     return NpgsqlDbType.Varchar;
                 case "char":
@@ -65,6 +88,8 @@ namespace Npgsql.Bulk
                 case "float4":
                     return NpgsqlDbType.Real;
                 case "float8":
+                case "double":
+                case "double precision":
                     return NpgsqlDbType.Double;
                 case "numeric":
                 case "decimal":
@@ -111,6 +136,9 @@ namespace Npgsql.Bulk
                 case "daterange":
                     return NpgsqlDbType.Range;
                 default:
+
+                    if (Enum.TryParse<NpgsqlDbType>(info.ColumnType, true, out var npgsqlDbType))
+                        return npgsqlDbType;
 
                     if (info.ColumnTypeExtra.Equals("array", StringComparison.OrdinalIgnoreCase))
                         return NpgsqlDbType.Array;

@@ -30,6 +30,9 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20.DAL
         [Column("range")]
         public NpgsqlRange<DateTime> Duration { get; set; }
 
+        [Column("interval")]
+        public TimeSpan Interval { get; set; }
+
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
     }
