@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\BulkContextFactory.cs" Link="BulkContextFactory.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Configuration.cs" Link="Configuration.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\DAL\Address.cs" Link="DAL\Address.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\DAL\BulkContext.cs" Link="DAL\BulkContext.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20190510131433_Initial.cs" Link="Migrations\20190510131433_Initial.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20190510131433_Initial.Designer.cs" Link="Migrations\20190510131433_Initial.Designer.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20190929100913_AddIntervalColumn.cs" Link="Migrations\20190929100913_AddIntervalColumn.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20190929100913_AddIntervalColumn.Designer.cs" Link="Migrations\20190929100913_AddIntervalColumn.Designer.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\BulkContextModelSnapshot.cs" Link="Migrations\BulkContextModelSnapshot.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Program.cs" Link="Program.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner\DAL\IHasId.cs" Link="DAL\IHasId.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner\DAL\IHasId2.cs" Link="DAL\IHasId2.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="DAL\" />
+    <Folder Include="Migrations\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="3.0.0" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\Npgsql.Bulk.DotNetStandard21\Npgsql.Bulk.DotNetStandard21.csproj" />
+  </ItemGroup>
+
+
+</Project>

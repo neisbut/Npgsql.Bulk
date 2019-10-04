@@ -4,7 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System;
-#if NETSTANDARD1_5 || NETSTANDARD2_0
+#if NETSTANDARD1_5 || NETSTANDARD2_0 || NETSTANDARD2_1
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 #endif
 
@@ -61,7 +61,7 @@ namespace Npgsql.Bulk.Model
 
         public bool IsDbGenerated { get; set; }
 
-#if NETSTANDARD1_5 || NETSTANDARD2_0
+#if NETSTANDARD1_5 || NETSTANDARD2_0 || NETSTANDARD2_1
         public ValueGenerator LocalGenerator { get; set; }
 #endif
 

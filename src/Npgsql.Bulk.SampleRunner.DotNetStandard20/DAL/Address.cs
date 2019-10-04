@@ -35,5 +35,6 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20.DAL
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
+
     }
 }

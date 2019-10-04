@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27004.2002
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29324.140
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk", "Npgsql.Bulk\Npgsql.Bulk.csproj", "{688A13D6-824A-498C-AD50-28E860E1DE58}"
 EndProject
@@ -19,6 +19,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.SampleRunner.DotNetStandard20", "Npgsql.Bulk.SampleRunner.DotNetStandard20\Npgsql.Bulk.SampleRunner.DotNetStandard20.csproj", "{C7B2A083-6BB9-49BE-9A3E-A09EC62CD405}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.IntegrationTests.DotNetStandard20", "Npgsql.Bulk.IntegrationTests.DotNetStandard20\Npgsql.Bulk.IntegrationTests.DotNetStandard20.csproj", "{7FD417F6-25A1-46D6-A416-03358FBFBEC4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.DotNetStandard21", "Npgsql.Bulk.DotNetStandard21\Npgsql.Bulk.DotNetStandard21.csproj", "{25A92752-58EF-4BE0-9637-92030314A3DE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.SampleRunner.DotNetStandard21", "Npgsql.Bulk.SampleRunner.DotNetStandard21\Npgsql.Bulk.SampleRunner.DotNetStandard21.csproj", "{00426175-AB90-47DF-B64C-E655A64BE663}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -46,6 +50,14 @@ Global
 		{7FD417F6-25A1-46D6-A416-03358FBFBEC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7FD417F6-25A1-46D6-A416-03358FBFBEC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7FD417F6-25A1-46D6-A416-03358FBFBEC4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{25A92752-58EF-4BE0-9637-92030314A3DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25A92752-58EF-4BE0-9637-92030314A3DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25A92752-58EF-4BE0-9637-92030314A3DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25A92752-58EF-4BE0-9637-92030314A3DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00426175-AB90-47DF-B64C-E655A64BE663}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00426175-AB90-47DF-B64C-E655A64BE663}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00426175-AB90-47DF-B64C-E655A64BE663}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00426175-AB90-47DF-B64C-E655A64BE663}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
