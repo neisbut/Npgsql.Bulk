@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE;NETSTANDARD</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;NETSTANDARD</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Npgsql.Bulk.SampleRunner\DAL\Address.cs" Link="DAL\Address.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner\DAL\Address2.cs" Link="DAL\Address2.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner\DAL\AddressType.cs" Link="DAL\AddressType.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner\DAL\BulkContext.cs" Link="DAL\BulkContext.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner\DAL\IHasId.cs" Link="DAL\IHasId.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner\DAL\IHasId2.cs" Link="DAL\IHasId2.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner\DAL\TestDbConfiguration.cs" Link="DAL\TestDbConfiguration.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner\Program.cs" Link="Program.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="DAL\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EntityFramework" Version="6.3.0" />
+    <PackageReference Include="EntityFramework6.Npgsql" Version="6.3.0-preview5" />
+    <PackageReference Include="Npgsql" Version="4.1.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Npgsql.Bulk.DotNetStandard21Ef6\Npgsql.Bulk.DotNetStandard21Ef6.csproj" />
+  </ItemGroup>
+
+</Project>

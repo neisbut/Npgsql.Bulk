@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
-#if NETSTANDARD1_5 || NETSTANDARD2_0 || NETSTANDARD2_1
+#if EFCore
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 #endif
@@ -45,7 +45,7 @@ namespace Npgsql.Bulk
         public Action<T, NpgsqlBinaryImporter> ClientDataWithKeyWriterAction { get; private set; }
         public Dictionary<string, Action<T, NpgsqlDataReader>> IdentityValuesWriterActions { get; private set; }
 
-#if NETSTANDARD1_5 || NETSTANDARD2_0 || NETSTANDARD2_1
+#if EFCore
         public Action<T, EntityEntry, Dictionary<string, ValueGenerator>> AutoGenerateValues { get; private set; }
 #endif
 
@@ -85,7 +85,7 @@ namespace Npgsql.Bulk
                 CreateReaderMethod($"IdentityValuesWriter_{byTableName.Key}", byTableName.ToArray(), readerFunc);
 
 
-#if NETSTANDARD1_5 || NETSTANDARD2_0 || NETSTANDARD2_1
+#if EFCore
             CreateAutoGenerateMethods("AutoGenerateValues", entityInfo.PropertyToGenerators);
             generatedType = typeBuilder.CreateTypeInfo().AsType();
 #else
@@ -103,7 +103,7 @@ namespace Npgsql.Bulk
                     (Action<T, NpgsqlDataReader>)generatedType.GetMethod($"IdentityValuesWriter_{byTableName.Key}")
                         .CreateDelegate(typeof(Action<T, NpgsqlDataReader>));
 
-#if NETSTANDARD1_5 || NETSTANDARD2_0 || NETSTANDARD2_1
+#if EFCore
             AutoGenerateValues = (Action<T, EntityEntry, Dictionary<string, ValueGenerator>>)generatedType.GetMethod("AutoGenerateValues")
                 .CreateDelegate(typeof(Action<T, EntityEntry, Dictionary<string, ValueGenerator>>));
 #endif
@@ -245,7 +245,7 @@ namespace Npgsql.Bulk
         }
 
 
-#if NETSTANDARD1_5 || NETSTANDARD2_0 || NETSTANDARD2_1
+#if EFCore
         private void CreateAutoGenerateMethods(string methodName, Dictionary<PropertyInfo, ValueGenerator> generators)
         {
             var methodBuilder = typeBuilder.DefineMethod(

@@ -1,6 +1,7 @@
 ﻿using Npgsql.Bulk.DAL;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Data.Entity;
 using System.Diagnostics;
 using System.Linq;
@@ -13,6 +14,10 @@ namespace Npgsql.Bulk
     {
         static void Main()
         {
+#if NETSTANDARD
+            DbProviderFactories.RegisterFactory("Npgsql", Npgsql.NpgsqlFactory.Instance);
+#endif
+
             Console.WriteLine("Trying plain case...");
             TestPlainCase();
             Console.WriteLine();

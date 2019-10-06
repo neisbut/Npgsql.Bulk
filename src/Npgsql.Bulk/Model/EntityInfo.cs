@@ -1,4 +1,4 @@
-﻿#if NETSTANDARD1_5 || NETSTANDARD2_0 || NETSTANDARD2_1
+﻿#if EFCore
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 #endif
 using System.Collections.Generic;
@@ -48,7 +48,7 @@ namespace Npgsql.Bulk.Model
 
         public object CodeBuilder { get; set; }
 
-#if NETSTANDARD1_5 || NETSTANDARD2_0 || NETSTANDARD2_1
+#if EFCore
         public Dictionary<PropertyInfo, ValueGenerator> PropertyToGenerators;
 
         public Dictionary<string, ValueGenerator> PropertyNameToGenerators;

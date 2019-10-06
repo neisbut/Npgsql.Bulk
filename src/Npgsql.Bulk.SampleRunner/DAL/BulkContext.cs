@@ -14,6 +14,8 @@ namespace Npgsql.Bulk.DAL
         {
             base.OnModelCreating(modelBuilder);
 
+            Database.SetInitializer<BulkContext>(null);
+
             modelBuilder.Entity<Address2>().HasEntitySetName("Address2");
             modelBuilder.Entity<Address2>().Property(x => x.AddressId).HasColumnName("base_address_id");
         }
