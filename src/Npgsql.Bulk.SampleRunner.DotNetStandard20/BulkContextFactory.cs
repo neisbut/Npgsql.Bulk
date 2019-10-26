@@ -1,6 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.Bulk.DAL;
+using System;
+using System.Collections.Generic;
 
 namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 {

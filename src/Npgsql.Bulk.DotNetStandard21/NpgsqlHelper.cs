@@ -118,6 +118,7 @@ namespace Npgsql.Bulk
                         ColumnInfo = columnsInfo.First(c => c.ColumnName == x.GetColumnName()),
                         IsDbGenerated = x.ValueGenerated != ValueGenerated.Never && localGenerator == null,
                         LocalGenerator = localGenerator,
+                        ValueConverter = x.GetValueConverter(),
                         IsKey = x.IsKey(),
                         IsInheritanceUsed = entityType.BaseType != null
                     };

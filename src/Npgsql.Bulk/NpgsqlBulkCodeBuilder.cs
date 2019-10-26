@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 #if EFCore
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 #endif
 using Npgsql.Bulk.Model;
@@ -47,6 +48,10 @@ namespace Npgsql.Bulk
 
 #if EFCore
         public Action<T, EntityEntry, Dictionary<string, ValueGenerator>> AutoGenerateValues { get; private set; }
+
+        FieldBuilder convertersListField;
+
+        List<ValueConverter> converters = new List<ValueConverter>();
 #endif
 
         public void InitBuilder(
@@ -79,7 +84,7 @@ namespace Npgsql.Bulk
 
             CreateWriterMethod("ClientDataWriter", clientDataInfos);
             CreateWriterMethod("ClientDataWithKeyWriter", clientDataWithKeyInfos);
-            
+
 
             foreach (var byTableName in identByTableName)
                 CreateReaderMethod($"IdentityValuesWriter_{byTableName.Key}", byTableName.ToArray(), readerFunc);
@@ -106,13 +111,54 @@ namespace Npgsql.Bulk
 #if EFCore
             AutoGenerateValues = (Action<T, EntityEntry, Dictionary<string, ValueGenerator>>)generatedType.GetMethod("AutoGenerateValues")
                 .CreateDelegate(typeof(Action<T, EntityEntry, Dictionary<string, ValueGenerator>>));
+
+            generatedType.GetField("Converters")?.SetValue(null, converters.Select(x => x.ConvertToProvider).ToArray());
 #endif
 
             IsInitialized = true;
         }
 
+        private void WriteValueGet(ILGenerator ilOut, MappingInfo info, MethodInfo getValueMethod)
+        {
+            
+#if EFCore
+            if (info.ValueConverter != null)
+            {
+                convertersListField = convertersListField ?? 
+                    typeBuilder.DefineField("Converters", typeof(Func<object, object>[]),
+                        FieldAttributes.Public | FieldAttributes.Static);
+
+                int convIndex = converters.IndexOf(info.ValueConverter);
+                if (convIndex < 0)
+                {
+                    converters.Add(info.ValueConverter);
+                    convIndex = converters.Count - 1;
+                }
+
+                ilOut.Emit(OpCodes.Ldsfld, convertersListField);
+                ilOut.Emit(OpCodes.Ldc_I4_S, convIndex);
+                ilOut.Emit(OpCodes.Ldelem_Ref);
+
+                ilOut.Emit(OpCodes.Ldarg_0);
+                ilOut.Emit(getValueMethod.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, getValueMethod);
+
+                ilOut.Emit(OpCodes.Callvirt, typeof(Func<object, object>).GetMethod("Invoke"));
+
+                if (info.ValueConverter.ProviderClrType.IsValueType)
+                    ilOut.Emit(OpCodes.Unbox_Any, info.ValueConverter.ProviderClrType);
+                else
+                    ilOut.Emit(OpCodes.Castclass, info.ValueConverter.ProviderClrType);
+
+                return;
+            }
+#endif
+            ilOut.Emit(OpCodes.Ldarg_0);
+            ilOut.Emit(getValueMethod.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, getValueMethod);
+        }
+
         private void CreateWriterMethod(string methodName, MappingInfo[] infos)
         {
+
             var methodBuilder = typeBuilder.DefineMethod(
                 methodName,
                 MethodAttributes.Public | MethodAttributes.Static,
@@ -122,61 +168,72 @@ namespace Npgsql.Bulk
             var ilOut = methodBuilder.GetILGenerator();
             var localVars = new Dictionary<Type, LocalBuilder>();
 
+            
+
             foreach (var info in infos)
             {
                 var mi = (info.OverrideSourceMethod) ?? info.Property.GetGetMethod();
                 if (mi == null) throw new InvalidOperationException($"Property {info.Property.Name} is not accessible for bulk write");
-                var underlying = Nullable.GetUnderlyingType(mi.ReturnType);
+
+                var fieldType = mi.ReturnType;
+                var underlying = Nullable.GetUnderlyingType(fieldType);
+
+#if EFCore
+                if (info.ValueConverter != null)
+                {
+                    fieldType = info.ValueConverter.ProviderClrType;
+                    underlying = Nullable.GetUnderlyingType(fieldType);
+                }
+#endif
 
                 if (underlying == null)
                 {
                     ilOut.Emit(OpCodes.Ldarg_1);
-                    ilOut.Emit(OpCodes.Ldarg_0);
-                    ilOut.Emit(mi.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, mi);
+                    WriteValueGet(ilOut, info, mi);
 
                     if (info.NpgsqlType == NpgsqlTypes.NpgsqlDbType.Array)
                     {
-                        if (mi.ReturnType.IsArray)
+                        if (fieldType.IsArray)
                         {
-                            ilOut.Emit(OpCodes.Callvirt, writeMethodShort.MakeGenericMethod(mi.ReturnType));
+                            ilOut.Emit(OpCodes.Callvirt, writeMethodShort.MakeGenericMethod(fieldType));
                         }
-                        else if (mi.ReturnType.IsGenericType && mi.ReturnType.GetGenericTypeDefinition() == typeof(List<>))
+                        else if (fieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == typeof(List<>))
                         {
-                            ilOut.Emit(OpCodes.Callvirt, writeMethodShort.MakeGenericMethod(mi.ReturnType));
+                            ilOut.Emit(OpCodes.Callvirt, writeMethodShort.MakeGenericMethod(fieldType));
                         }
                         else
                         {
-                            var toArrayLocal = toArraymethod.MakeGenericMethod(mi.ReturnType.GetGenericArguments()[0]);
+                            var toArrayLocal = toArraymethod.MakeGenericMethod(fieldType.GetGenericArguments()[0]);
                             ilOut.Emit(OpCodes.Call, toArrayLocal);
                             ilOut.Emit(OpCodes.Callvirt, writeMethodShort.MakeGenericMethod(toArrayLocal.ReturnType));
                         }
                     }
                     else if (info.NpgsqlType == NpgsqlTypes.NpgsqlDbType.Range)
                     {
-                        ilOut.Emit(OpCodes.Callvirt, writeMethodShort.MakeGenericMethod(mi.ReturnType));
+                        ilOut.Emit(OpCodes.Callvirt, writeMethodShort.MakeGenericMethod(fieldType));
                     }
-                    else if (mi.ReturnType.GetTypeInfo().IsEnum)
+                    else if (fieldType.GetTypeInfo().IsEnum)
                     {
                         ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
-                        ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(Enum.GetUnderlyingType(mi.ReturnType.GetTypeInfo())));
+                        ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(Enum.GetUnderlyingType(fieldType.GetTypeInfo())));
                     }
                     else
                     {
                         ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
-                        ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(mi.ReturnType));
+                        ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(fieldType));
                     }
                 }
                 else
                 {
-                    if (!localVars.TryGetValue(mi.ReturnType, out LocalBuilder localVar))
-                        localVars[mi.ReturnType] = localVar = ilOut.DeclareLocal(mi.ReturnType);
+                    if (!localVars.TryGetValue(fieldType, out LocalBuilder localVar))
+                        localVars[fieldType] = localVar = ilOut.DeclareLocal(fieldType);
 
-                    ilOut.Emit(OpCodes.Ldarg_0);
-                    ilOut.Emit(OpCodes.Callvirt, mi);
+                    WriteValueGet(ilOut, info, mi);
+
                     ilOut.Emit(OpCodes.Stloc, localVar);
 
                     ilOut.Emit(OpCodes.Ldloca_S, localVar);
-                    ilOut.Emit(OpCodes.Call, mi.ReturnType.GetMethod("get_HasValue"));
+                    ilOut.Emit(OpCodes.Call, fieldType.GetMethod("get_HasValue"));
 
                     var falseLbl = ilOut.DefineLabel();
                     var outLbl = ilOut.DefineLabel();
@@ -185,7 +242,7 @@ namespace Npgsql.Bulk
 
                     ilOut.Emit(OpCodes.Ldarg_1);
                     ilOut.Emit(OpCodes.Ldloca, localVar);
-                    ilOut.Emit(OpCodes.Call, mi.ReturnType.GetMethod("get_Value"));
+                    ilOut.Emit(OpCodes.Call, fieldType.GetMethod("get_Value"));
 
                     if (underlying.IsEnum)
                     {

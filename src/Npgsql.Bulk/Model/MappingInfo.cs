@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System;
 #if EFCore
 using Microsoft.EntityFrameworkCore.ValueGeneration;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 #endif
 
 namespace Npgsql.Bulk.Model
@@ -63,6 +64,8 @@ namespace Npgsql.Bulk.Model
 
 #if EFCore
         public ValueGenerator LocalGenerator { get; set; }
+
+        public ValueConverter ValueConverter { get; set; }
 #endif
 
         public bool IsKey { get; set; }

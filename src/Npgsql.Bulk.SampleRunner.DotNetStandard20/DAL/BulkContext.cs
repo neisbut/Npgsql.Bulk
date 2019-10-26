@@ -22,6 +22,9 @@ namespace Npgsql.Bulk.DAL
 
             modelBuilder.Entity<Address>().HasKey(x => x.AddressId);
 
+            modelBuilder.Entity<Address>().Property(x => x.PostalCode)
+                .HasConversion(x => "1" + x, x => x.Substring(1));
+
         }
     }
 

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 using Npgsql.Bulk.DAL;
 using Npgsql.Bulk.SampleRunner.DotNetStandard20.DAL;
@@ -17,6 +18,7 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 {
     class Program
     {
+
         static void Main(string[] args)
         {
             var streets = new[] { "First", "Second", "Third" };

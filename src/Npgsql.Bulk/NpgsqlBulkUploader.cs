@@ -921,7 +921,8 @@ namespace Npgsql.Bulk
             };
 
 #if EFCore
-            info.PropertyToGenerators = mappingInfo.Where(x => x.LocalGenerator != null).ToDictionary(x => x.Property, x => x.LocalGenerator);
+            info.PropertyToGenerators = mappingInfo.Where(x => x.LocalGenerator != null)
+                .ToDictionary(x => x.Property, x => x.LocalGenerator);
             info.PropertyNameToGenerators = info.PropertyToGenerators.ToDictionary(x => x.Key.Name, x => x.Value);
 #endif
 
