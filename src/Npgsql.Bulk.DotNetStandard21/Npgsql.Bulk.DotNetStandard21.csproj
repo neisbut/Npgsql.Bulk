@@ -22,6 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Npgsql.Bulk.DotNetStandard20\NpgsqlHelper.cs" Link="NpgsqlHelper.cs" />
+    <Compile Include="..\Npgsql.Bulk.DotNetStandard20\ValueHelper.cs" Link="ValueHelper.cs" />
     <Compile Include="..\Npgsql.Bulk\BulkMappingSourceAttribute.cs" Link="BulkMappingSourceAttribute.cs" />
     <Compile Include="..\Npgsql.Bulk\BulkOperationModification.cs" Link="BulkOperationModification.cs" />
     <Compile Include="..\Npgsql.Bulk\BulkOperationModifierAttribute.cs" Link="BulkOperationModifierAttribute.cs" />

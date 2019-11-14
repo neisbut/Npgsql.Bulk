@@ -9,11 +9,14 @@
     <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\BulkContextFactory.cs" Link="BulkContextFactory.cs" />
     <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Configuration.cs" Link="Configuration.cs" />
     <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\DAL\Address.cs" Link="DAL\Address.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\DAL\Address2EF.cs" Link="DAL\Address2EF.cs" />
     <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\DAL\BulkContext.cs" Link="DAL\BulkContext.cs" />
     <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20190510131433_Initial.cs" Link="Migrations\20190510131433_Initial.cs" />
     <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20190510131433_Initial.Designer.cs" Link="Migrations\20190510131433_Initial.Designer.cs" />
     <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20190929100913_AddIntervalColumn.cs" Link="Migrations\20190929100913_AddIntervalColumn.cs" />
     <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20190929100913_AddIntervalColumn.Designer.cs" Link="Migrations\20190929100913_AddIntervalColumn.Designer.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20191102121859_AddDerivedTable.cs" Link="Migrations\20191102121859_AddDerivedTable.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20191102121859_AddDerivedTable.Designer.cs" Link="Migrations\20191102121859_AddDerivedTable.Designer.cs" />
     <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\BulkContextModelSnapshot.cs" Link="Migrations\BulkContextModelSnapshot.cs" />
     <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Program.cs" Link="Program.cs" />
     <Compile Include="..\Npgsql.Bulk.SampleRunner\DAL\IHasId.cs" Link="DAL\IHasId.cs" />

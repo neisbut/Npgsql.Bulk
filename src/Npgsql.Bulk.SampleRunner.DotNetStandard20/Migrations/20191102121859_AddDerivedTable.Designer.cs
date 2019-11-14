@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.Bulk.DAL;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -10,9 +11,10 @@ using NpgsqlTypes;
 namespace Npgsql.Bulk.SampleRunner.DotNetStandard20.Migrations
 {
     [DbContext(typeof(BulkContext))]
-    partial class BulkContextModelSnapshot : ModelSnapshot
+    [Migration("20191102121859_AddDerivedTable")]
+    partial class AddDerivedTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

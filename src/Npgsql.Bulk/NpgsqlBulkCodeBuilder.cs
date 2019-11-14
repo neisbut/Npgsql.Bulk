@@ -6,9 +6,15 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 #if EFCore
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
+#else
+using System.Data.Entity;
 #endif
 using Npgsql.Bulk.Model;
 
@@ -42,12 +48,12 @@ namespace Npgsql.Bulk
 
         public bool IsInitialized { get; private set; }
 
-        public Action<T, NpgsqlBinaryImporter> ClientDataWriterAction { get; private set; }
-        public Action<T, NpgsqlBinaryImporter> ClientDataWithKeyWriterAction { get; private set; }
+        public Action<T, NpgsqlBinaryImporter, DbContext> ClientDataWriterAction { get; private set; }
+        public Action<T, NpgsqlBinaryImporter, DbContext> ClientDataWithKeyWriterAction { get; private set; }
         public Dictionary<string, Action<T, NpgsqlDataReader>> IdentityValuesWriterActions { get; private set; }
 
 #if EFCore
-        public Action<T, EntityEntry, Dictionary<string, ValueGenerator>> AutoGenerateValues { get; private set; }
+        // public Action<T, EntityEntry, Dictionary<string, ValueGenerator>> AutoGenerateValues { get; private set; }
 
         FieldBuilder convertersListField;
 
@@ -91,16 +97,16 @@ namespace Npgsql.Bulk
 
 
 #if EFCore
-            CreateAutoGenerateMethods("AutoGenerateValues", entityInfo.PropertyToGenerators);
+            //CreateAutoGenerateMethods("AutoGenerateValues", entityInfo.PropertyToGenerators);
             generatedType = typeBuilder.CreateTypeInfo().AsType();
 #else
             generatedType = typeBuilder.CreateType();
 #endif
 
-            ClientDataWriterAction = (Action<T, NpgsqlBinaryImporter>)generatedType.GetMethod("ClientDataWriter")
-                .CreateDelegate(typeof(Action<T, NpgsqlBinaryImporter>));
-            ClientDataWithKeyWriterAction = (Action<T, NpgsqlBinaryImporter>)generatedType.GetMethod("ClientDataWithKeyWriter")
-                .CreateDelegate(typeof(Action<T, NpgsqlBinaryImporter>));
+            ClientDataWriterAction = (Action<T, NpgsqlBinaryImporter, DbContext>)generatedType.GetMethod("ClientDataWriter")
+                .CreateDelegate(typeof(Action<T, NpgsqlBinaryImporter, DbContext>));
+            ClientDataWithKeyWriterAction = (Action<T, NpgsqlBinaryImporter, DbContext>)generatedType.GetMethod("ClientDataWithKeyWriter")
+                .CreateDelegate(typeof(Action<T, NpgsqlBinaryImporter, DbContext>));
             IdentityValuesWriterActions = new Dictionary<string, Action<T, NpgsqlDataReader>>();
 
             foreach (var byTableName in identByTableName)
@@ -109,10 +115,12 @@ namespace Npgsql.Bulk
                         .CreateDelegate(typeof(Action<T, NpgsqlDataReader>));
 
 #if EFCore
-            AutoGenerateValues = (Action<T, EntityEntry, Dictionary<string, ValueGenerator>>)generatedType.GetMethod("AutoGenerateValues")
-                .CreateDelegate(typeof(Action<T, EntityEntry, Dictionary<string, ValueGenerator>>));
+            //AutoGenerateValues = (Action<T, EntityEntry, Dictionary<string, ValueGenerator>>)generatedType.GetMethod("AutoGenerateValues")
+            //    .CreateDelegate(typeof(Action<T, EntityEntry, Dictionary<string, ValueGenerator>>));
 
             generatedType.GetField("Converters")?.SetValue(null, converters.Select(x => x.ConvertToProvider).ToArray());
+
+            ValueHelper<T>.MappingInfos = clientDataWithKeyInfos.ToDictionary(x => x.QualifiedColumnName);
 #endif
 
             IsInitialized = true;
@@ -120,11 +128,11 @@ namespace Npgsql.Bulk
 
         private void WriteValueGet(ILGenerator ilOut, MappingInfo info, MethodInfo getValueMethod)
         {
-            
+
 #if EFCore
             if (info.ValueConverter != null)
             {
-                convertersListField = convertersListField ?? 
+                convertersListField = convertersListField ??
                     typeBuilder.DefineField("Converters", typeof(Func<object, object>[]),
                         FieldAttributes.Public | FieldAttributes.Static);
 
@@ -151,10 +159,23 @@ namespace Npgsql.Bulk
 
                 return;
             }
+            else if (getValueMethod == null)
+            {
+                
+                ilOut.Emit(OpCodes.Ldarg_0);
+                ilOut.Emit(OpCodes.Ldstr, info.QualifiedColumnName);
+                ilOut.Emit(OpCodes.Ldarg_2);
+                ilOut.Emit(OpCodes.Call, typeof(ValueHelper<T>).GetMethod(nameof(ValueHelper<T>.Get))
+                    .MakeGenericMethod(info.DbProperty.ClrType));
+                
+                return;
+            }
 #endif
             ilOut.Emit(OpCodes.Ldarg_0);
             ilOut.Emit(getValueMethod.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, getValueMethod);
         }
+
+
 
         private void CreateWriterMethod(string methodName, MappingInfo[] infos)
         {
@@ -163,20 +184,25 @@ namespace Npgsql.Bulk
                 methodName,
                 MethodAttributes.Public | MethodAttributes.Static,
                 typeof(void),
-                new[] { typeof(T), typeof(NpgsqlBinaryImporter) });
+                new[] { typeof(T), typeof(NpgsqlBinaryImporter), typeof(DbContext) });
 
             var ilOut = methodBuilder.GetILGenerator();
             var localVars = new Dictionary<Type, LocalBuilder>();
 
-            
-
             foreach (var info in infos)
             {
-                var mi = (info.OverrideSourceMethod) ?? info.Property.GetGetMethod();
-                if (mi == null) throw new InvalidOperationException($"Property {info.Property.Name} is not accessible for bulk write");
+                var mi = (info.OverrideSourceMethod) ?? info.Property?.GetGetMethod();
+
+#if !EFCore
+                if (mi == null)
+                    throw new InvalidOperationException($"Property {info.Property.Name} is not accessible for bulk write");
 
                 var fieldType = mi.ReturnType;
                 var underlying = Nullable.GetUnderlyingType(fieldType);
+#else
+                var fieldType = info.DbProperty.ClrType;
+                var underlying = Nullable.GetUnderlyingType(fieldType);
+#endif
 
 #if EFCore
                 if (info.ValueConverter != null)
@@ -303,35 +329,43 @@ namespace Npgsql.Bulk
 
 
 #if EFCore
-        private void CreateAutoGenerateMethods(string methodName, Dictionary<PropertyInfo, ValueGenerator> generators)
-        {
-            var methodBuilder = typeBuilder.DefineMethod(
-                methodName,
-                MethodAttributes.Public | MethodAttributes.Static,
-                typeof(void),
-                new[] { typeof(T), typeof(EntityEntry), typeof(Dictionary<string, ValueGenerator>) });
+        //private void CreateAutoGenerateMethods(string methodName, Dictionary<IProperty, ValueGenerator> generators)
+        //{
+        //    var methodBuilder = typeBuilder.DefineMethod(
+        //        methodName,
+        //        MethodAttributes.Public | MethodAttributes.Static,
+        //        typeof(void),
+        //        new[] { typeof(T), typeof(EntityEntry), typeof(Dictionary<string, ValueGenerator>) });
 
-            var ilOut = methodBuilder.GetILGenerator();
-            var getGeneratorMethod = typeof(Dictionary<string, ValueGenerator>).GetProperty("Item").GetGetMethod();
-            var nextMethod = typeof(ValueGenerator).GetMethod("Next");
+        //    var ilOut = methodBuilder.GetILGenerator();
+        //    var getGeneratorMethod = typeof(Dictionary<string, ValueGenerator>).GetProperty("Item").GetGetMethod();
+        //    var nextMethod = typeof(ValueGenerator).GetMethod("Next");
 
-            foreach (var generator in generators)
-            {
-                ilOut.Emit(OpCodes.Ldarg_0);
+        //    foreach (var generator in generators)
+        //    {
+        //        ilOut.Emit(OpCodes.Ldarg_0);
 
-                ilOut.Emit(OpCodes.Ldarg_2);
-                ilOut.Emit(OpCodes.Ldstr, generator.Key.Name);
-                ilOut.Emit(OpCodes.Callvirt, getGeneratorMethod);
+        //        ilOut.Emit(OpCodes.Ldarg_2);
+        //        ilOut.Emit(OpCodes.Ldstr, generator.Key.Name);
+        //        ilOut.Emit(OpCodes.Callvirt, getGeneratorMethod);
 
-                ilOut.Emit(OpCodes.Ldarg_1);
-                ilOut.Emit(OpCodes.Callvirt, nextMethod);
+        //        ilOut.Emit(OpCodes.Ldarg_1);
+        //        ilOut.Emit(OpCodes.Callvirt, nextMethod);
 
-                ilOut.Emit(OpCodes.Unbox_Any, generator.Key.PropertyType);
-                ilOut.Emit(OpCodes.Callvirt, generator.Key.GetSetMethod());
-            }
+        //        ilOut.Emit(OpCodes.Unbox_Any, generator.Key.ClrType);
 
-            ilOut.Emit(OpCodes.Ret);
-        }
+        //        if (generator.Key.PropertyInfo != null)
+        //        {
+        //            ilOut.Emit(OpCodes.Callvirt, generator.Key.PropertyInfo.GetSetMethod());
+        //        }
+        //        else
+        //        {
+        //            ilOut.Emit(OpCodes.Pop);
+        //        }
+        //    }
+
+        //    ilOut.Emit(OpCodes.Ret);
+        //}
 #endif
 
     }

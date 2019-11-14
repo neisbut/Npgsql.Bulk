@@ -101,7 +101,8 @@ namespace Npgsql.Bulk
                                 BindingFlags.GetProperty | BindingFlags.Instance),
                             ColumnInfo = columnInfo,
                             IsDbGenerated = x.Column.IsStoreGeneratedComputed || x.Column.IsStoreGeneratedIdentity,
-                            IsKey = entityType.KeyProperties.Any(y => y.Name == x.Property.Name)
+                            IsKey = entityType.KeyProperties.Any(y => y.Name == x.Property.Name),
+                            DoUpdate = true
                         };
                     }).ToList();
 

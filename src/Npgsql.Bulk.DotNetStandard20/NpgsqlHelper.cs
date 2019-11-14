@@ -97,10 +97,9 @@ namespace Npgsql.Bulk
             }
 
             var innerList = entityType.GetProperties()
-                .Where(x => x.PropertyInfo != null)
                 .Select(x =>
                 {
-                    var relational = x.DeclaringEntityType.Relational();
+                    var relational = x.DeclaringEntityType;
                     ValueGenerator localGenerator = null;
 
                     var generatorFactory = x.GetAnnotations().FirstOrDefault(a => a.Name == "ValueGeneratorFactory");
@@ -112,14 +111,17 @@ namespace Npgsql.Bulk
 
                     return new MappingInfo()
                     {
-                        TableName = relational.TableName,
-                        TableNameQualified = NpgsqlHelper.GetQualifiedName(relational.TableName, relational.Schema),
+                        TableName = relational.GetTableName(),
+                        TableNameQualified = NpgsqlHelper.GetQualifiedName(relational.GetTableName(), relational.GetSchema()),
                         Property = x.PropertyInfo,
-                        ColumnInfo = columnsInfo.First(c => c.ColumnName == x.Relational().ColumnName),
+                        ColumnInfo = columnsInfo.First(c => c.ColumnName == x.GetColumnName()),
                         IsDbGenerated = x.ValueGenerated != ValueGenerated.Never && localGenerator == null,
                         LocalGenerator = localGenerator,
+                        ValueConverter = x.GetValueConverter(),
                         IsKey = x.IsKey(),
-                        IsInheritanceUsed = entityType.BaseType != null
+                        IsInheritanceUsed = entityType.BaseType != null,
+                        DbProperty = x,
+                        DoUpdate = x.PropertyInfo != null
                     };
                 }).ToList();
 
@@ -128,15 +130,34 @@ namespace Npgsql.Bulk
 
         internal static string GetTableName(DbContext context, Type t)
         {
-            var relational = context.Model.FindEntityType(t).Relational();
-            return relational.TableName;
+            var relational = context.Model.FindEntityType(t);
+            return relational.GetTableName();
         }
 
         internal static string GetTableNameQualified(DbContext context, Type t)
         {
-            var relational = context.Model.FindEntityType(t).Relational();
-            return GetQualifiedName(relational.TableName, relational.Schema);
+            var relational = context.Model.FindEntityType(t);
+            return GetQualifiedName(relational.GetTableName(), relational.GetSchema());
         }
-         
+
+#if NETSTANDARD2_0
+
+        private static string GetTableName(this IEntityType entity)
+        {
+            return entity.Relational().TableName;
+        }
+
+        private static string GetSchema(this IEntityType entity)
+        {
+            return entity.Relational().Schema;
+        }
+
+        private static string GetColumnName(this IProperty property)
+        {
+            return property.Relational().ColumnName;
+        }
+
+#endif
+
     }
 }

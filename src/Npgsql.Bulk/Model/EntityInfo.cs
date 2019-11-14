@@ -1,4 +1,5 @@
 ﻿#if EFCore
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 #endif
 using System.Collections.Generic;
@@ -49,7 +50,7 @@ namespace Npgsql.Bulk.Model
         public object CodeBuilder { get; set; }
 
 #if EFCore
-        public Dictionary<PropertyInfo, ValueGenerator> PropertyToGenerators;
+        public Dictionary<IProperty, ValueGenerator> PropertyToGenerators;
 
         public Dictionary<string, ValueGenerator> PropertyNameToGenerators;
 #endif

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System;
 #if EFCore
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 #endif
@@ -34,6 +35,14 @@ namespace Npgsql.Bulk.Model
             set
             {
                 _property = value;
+
+#if EFCore
+                if (_property == null)
+                {
+                    IsNullableInClr = false;
+                    return;
+                }
+#endif
 
                 if (_property.GetCustomAttributes<RequiredAttribute>().Any())
                 {
@@ -66,6 +75,9 @@ namespace Npgsql.Bulk.Model
         public ValueGenerator LocalGenerator { get; set; }
 
         public ValueConverter ValueConverter { get; set; }
+
+        public IProperty DbProperty { get; internal set; }
+
 #endif
 
         public bool IsKey { get; set; }
@@ -73,5 +85,8 @@ namespace Npgsql.Bulk.Model
         public List<BulkOperationModifierAttribute> ModifierAttributes { get; set; }
 
         public bool IsNullableInClr { get; private set; }
+
+        public bool DoUpdate { get; set; } = true;
+
     }
 }

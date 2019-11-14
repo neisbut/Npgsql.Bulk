@@ -11,6 +11,8 @@ namespace Npgsql.Bulk.DAL
     {
         public DbSet<Address> Addresses { get; set; }
 
+        public DbSet<Address2EF> Addresses2 { get; set; }
+
         public BulkContext(DbContextOptions<BulkContext> options) : base(options) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
