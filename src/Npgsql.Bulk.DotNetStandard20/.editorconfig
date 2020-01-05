@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# EF1000: Possible SQL injection vulnerability.
+dotnet_diagnostic.EF1000.severity = silent

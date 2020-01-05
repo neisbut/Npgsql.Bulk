@@ -78,6 +78,7 @@
     <Compile Include="BulkQueryableExtension.cs" />
     <Compile Include="BulkSelectInterceptor.cs" />
     <Compile Include="InsertConflictAction.cs" />
+    <Compile Include="IRelationalHelper.cs" />
     <Compile Include="Model\ColumnInfo.cs" />
     <Compile Include="Model\EntityInfo.cs" />
     <Compile Include="Model\TableLockLevel.cs" />
@@ -88,6 +89,7 @@
     <Compile Include="NpgsqlBulkUploader.cs" />
     <Compile Include="NpgsqlHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RelationalHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

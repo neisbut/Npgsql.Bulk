@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 #endif
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -27,27 +28,25 @@ namespace Npgsql.Bulk.Model
 
         public string CopyColumnsForUpdateQueryPart { get; set; }
 
-        public List<InsertQueryParts> InsertQueryParts { get; set; }
+        public ConcurrentDictionary<long, List<InsertQueryParts>> InsertQueryParts { get; set; }
 
         public List<UpdateQueryParts> UpdateQueryParts { get; set; }
 
-        public MappingInfo[] DbGeneratedInfos { get; set; }
+        public MappingInfo[] InsertDbGeneratedInfos { get; set; }
 
-        public MappingInfo[] ClientDataInfos { get; set; }
+        public MappingInfo[] UpdateDbGeneratedInfos { get; set; }
 
-        public MappingInfo[] ClientDataWithKeysInfos { get; set; }
+        public MappingInfo[] InsertClientDataInfos { get; set; }
+
+        public MappingInfo[] UpdateClientDataWithKeysInfos { get; set; }
 
         public MappingInfo[] KeyInfos { get; set; }
-
-        public string ClientDataColumnNames { get; set; }
-
-        public string ClientDataWithKeysColumnNames { get; set; }
-
-        public string DbGeneratedColumnNames { get; set; }
 
         public string[] KeyColumnNames { get; set; }
 
         public object CodeBuilder { get; set; }
+
+        public long MaxIsOptionalFlag { get; set; }
 
 #if EFCore
         public Dictionary<IProperty, ValueGenerator> PropertyToGenerators;

@@ -47,7 +47,17 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 
             var uploader = new NpgsqlBulkUploader(context);
 
+            
             context.Attach(data[0]);
+            data[0].AddressId = 11;
+
+            data[1].CreatedAt = DateTime.Now;
+
+            //context.Add(data[0]);
+            //context.Add(data[1]);
+            //context.SaveChanges();
+
+            // data.ForEach(x => x.StreetName = null);
 
             var sw = Stopwatch.StartNew();
             uploader.Insert(data);

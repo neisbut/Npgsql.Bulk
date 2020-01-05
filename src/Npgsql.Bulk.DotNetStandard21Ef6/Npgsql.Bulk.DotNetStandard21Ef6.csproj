@@ -16,6 +16,7 @@
     <Compile Include="..\Npgsql.Bulk\BulkQueryableExtension.cs" Link="BulkQueryableExtension.cs" />
     <Compile Include="..\Npgsql.Bulk\BulkSelectInterceptor.cs" Link="BulkSelectInterceptor.cs" />
     <Compile Include="..\Npgsql.Bulk\InsertConflictAction.cs" Link="InsertConflictAction.cs" />
+    <Compile Include="..\Npgsql.Bulk\IRelationalHelper.cs" Link="IRelationalHelper.cs" />
     <Compile Include="..\Npgsql.Bulk\Model\ColumnInfo.cs" Link="Model\ColumnInfo.cs" />
     <Compile Include="..\Npgsql.Bulk\Model\EntityInfo.cs" Link="Model\EntityInfo.cs" />
     <Compile Include="..\Npgsql.Bulk\Model\InsertQueryParts.cs" Link="Model\InsertQueryParts.cs" />
@@ -25,6 +26,7 @@
     <Compile Include="..\Npgsql.Bulk\NpgsqlBulkCodeBuilder.cs" Link="NpgsqlBulkCodeBuilder.cs" />
     <Compile Include="..\Npgsql.Bulk\NpgsqlBulkUploader.cs" Link="NpgsqlBulkUploader.cs" />
     <Compile Include="..\Npgsql.Bulk\NpgsqlHelper.cs" Link="NpgsqlHelper.cs" />
+    <Compile Include="..\Npgsql.Bulk\RelationalHelper.cs" Link="RelationalHelper.cs" />
   </ItemGroup>
 
   <ItemGroup>

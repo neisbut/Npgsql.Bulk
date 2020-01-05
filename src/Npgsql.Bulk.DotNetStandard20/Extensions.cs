@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Npgsql.Bulk
 {

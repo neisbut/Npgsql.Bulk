@@ -16,6 +16,8 @@ namespace Npgsql.Bulk
     public static class BulkQueryableExtension
     {
 
+        internal static IRelationalHelper RelationalHelper = new RelationalHelper();
+
         public static List<T> BulkSelect<T, TKey>(
             this IQueryable<T> source,
             Expression<Func<T, TKey>> keyExpression,
@@ -30,14 +32,14 @@ namespace Npgsql.Bulk
             var schemaSql = $"CREATE TEMP TABLE {keyDataTable} ON COMMIT DROP AS ({schemaQuery} LIMIT 0)";
 
             var context = NpgsqlHelper.GetContextFromQuery(source);
-            var conn = NpgsqlHelper.GetNpgsqlConnection(context);
+            var conn = RelationalHelper.GetNpgsqlConnection(context);
 
 
-            var localTr = NpgsqlHelper.EnsureOrStartTransaction(context, IsolationLevel.ReadCommitted);
+            var localTr = RelationalHelper.EnsureOrStartTransaction(context, IsolationLevel.ReadCommitted);
             try
             {
                 context.Database.ExecuteSqlCommand(schemaSql);
-                var columnsInfo = NpgsqlHelper.GetColumnsInfo(context, keyDataTable);
+                var columnsInfo = RelationalHelper.GetColumnsInfo(context, keyDataTable);
 
                 var propsMap = GetPropertiesMap(
                     ((IObjectContextAdapter)context).ObjectContext,

@@ -21,6 +21,7 @@
     <Compile Include="..\Npgsql.Bulk\BulkOperationModification.cs" Link="BulkOperationModification.cs" />
     <Compile Include="..\Npgsql.Bulk\BulkOperationModifierAttribute.cs" Link="BulkOperationModifierAttribute.cs" />
     <Compile Include="..\Npgsql.Bulk\InsertConflictAction.cs" Link="InsertConflictAction.cs" />
+    <Compile Include="..\Npgsql.Bulk\IRelationalHelper.cs" Link="IRelationalHelper.cs" />
     <Compile Include="..\Npgsql.Bulk\Model\ColumnInfo.cs" Link="Model\ColumnInfo.cs" />
     <Compile Include="..\Npgsql.Bulk\Model\EntityInfo.cs" Link="Model\EntityInfo.cs" />
     <Compile Include="..\Npgsql.Bulk\Model\InsertQueryParts.cs" Link="Model\InsertQueryParts.cs" />

@@ -24,89 +24,52 @@ namespace Npgsql.Bulk
             return $"{(prefix == null ? "" : "\"" + prefix + "\".")}\"{name}\"";
         }
 
-        internal static NpgsqlConnection GetNpgsqlConnection(DbContext context)
-        {
-            return (NpgsqlConnection)context.Database.GetDbConnection();
-        }
-
-        internal static IDbContextTransaction EnsureOrStartTransaction(
-            DbContext context, IsolationLevel isolation)
-        {
-            if (context.Database.CurrentTransaction == null)
-            {
-                if (System.Transactions.Transaction.Current != null)
-                {
-                    //System.Transactions.TransactionsDatabaseFacadeExtensions.EnlistTransaction(context.Database, System.Transactions.Transaction.Current);
-                    return null;
-                }
-
-                return context.Database.BeginTransaction(isolation);
-            }
-
-            return null;
-        }
-
-        internal static List<ColumnInfo> GetColumnsInfo(DbContext context, string tableName)
-        {
-            var sql = @"
-                    SELECT column_name as ColumnName, udt_name as ColumnType, (column_default IS NOT NULL) as HasDefault 
-                    FROM information_schema.columns
-                    WHERE table_name = @tableName";
-            var param = new NpgsqlParameter("@tableName", tableName);
-
-            var conn = GetNpgsqlConnection(context);
-            if (conn.State != ConnectionState.Open)
-                conn.Open();
-
-            using (var cmd = conn.CreateCommand())
-            {
-                cmd.CommandText = sql;
-                cmd.Parameters.Add(param);
-                var result = new List<ColumnInfo>();
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        result.Add(new ColumnInfo()
-                        {
-                            ColumnName = (string)reader["ColumnName"],
-                            ColumnType = (string)reader["ColumnType"],
-                            HasDefault = (bool)reader["HasDefault"]
-                        });
-                    }
-                }
-                return result;
-            }
-        }
-
         internal static List<MappingInfo> GetMetadata(DbContext context, Type type)
         {
             var metadata = context.Model;
             var entityType = metadata.GetEntityTypes().Single(x => x.ClrType == type);
 
             var tableName = GetTableName(context, type);
-            var columnsInfo = GetColumnsInfo(context, tableName);
+            var columnsInfo = NpgsqlBulkUploader.RelationalHelper.GetColumnsInfo(context, tableName);
             if (entityType.BaseType != null)
             {
                 var baseTableName = GetTableName(context, entityType.BaseType.ClrType);
                 if (baseTableName != tableName)
                 {
-                    var extraColumnsInfo = GetColumnsInfo(context, baseTableName);
+                    var extraColumnsInfo = NpgsqlBulkUploader.RelationalHelper.GetColumnsInfo(context, baseTableName);
                     columnsInfo.AddRange(extraColumnsInfo);
                 }
             }
 
+            int optinalIndex = 0;
             var innerList = entityType.GetProperties()
                 .Select(x =>
                 {
                     var relational = x.DeclaringEntityType;
                     ValueGenerator localGenerator = null;
+                    bool isDbGenerated = false;
 
                     var generatorFactory = x.GetAnnotations().FirstOrDefault(a => a.Name == "ValueGeneratorFactory");
                     if (generatorFactory != null)
                     {
                         var valueGeneratorAccessor = generatorFactory.Value as Func<IProperty, IEntityType, ValueGenerator>;
                         localGenerator = valueGeneratorAccessor(x, x.DeclaringEntityType);
+                    }
+                    else if (x.GetAnnotations().Any(y => y.Name == "Relational:ComputedColumnSql"))
+                    {
+                        isDbGenerated = true;
+                    }
+                    else if (x.GetAnnotations().Any(y => y.Name == "Npgsql:ValueGenerationStrategy"))
+                    {
+                        isDbGenerated = true;
+                    }
+
+                    var indexes = ((Microsoft.EntityFrameworkCore.Metadata.Internal.Property)x).PropertyIndexes;
+                    long optionalFlag = 0;
+                    if (indexes.StoreGenerationIndex >= 0 && localGenerator == null)
+                    {
+                        optionalFlag = 1 << optinalIndex;
+                        optinalIndex++;
                     }
 
                     return new MappingInfo()
@@ -115,13 +78,15 @@ namespace Npgsql.Bulk
                         TableNameQualified = NpgsqlHelper.GetQualifiedName(relational.GetTableName(), relational.GetSchema()),
                         Property = x.PropertyInfo,
                         ColumnInfo = columnsInfo.First(c => c.ColumnName == x.GetColumnName()),
-                        IsDbGenerated = x.ValueGenerated != ValueGenerated.Never && localGenerator == null,
                         LocalGenerator = localGenerator,
                         ValueConverter = x.GetValueConverter(),
                         IsKey = x.IsKey(),
                         IsInheritanceUsed = entityType.BaseType != null,
                         DbProperty = x,
-                        DoUpdate = x.PropertyInfo != null
+                        DoUpdate = !isDbGenerated && x.PropertyInfo != null,    // don't update shadow props
+                        DoInsert = !isDbGenerated,                              // do insert of shadow props
+                        ReadBack = indexes.StoreGenerationIndex >= 0,
+                        IsSpecifiedFlag = optionalFlag
                     };
                 }).ToList();
 
@@ -142,17 +107,17 @@ namespace Npgsql.Bulk
 
 #if NETSTANDARD2_0
 
-        private static string GetTableName(this IEntityType entity)
+        internal static string GetTableName(this IEntityType entity)
         {
             return entity.Relational().TableName;
         }
 
-        private static string GetSchema(this IEntityType entity)
+        internal static string GetSchema(this IEntityType entity)
         {
             return entity.Relational().Schema;
         }
 
-        private static string GetColumnName(this IProperty property)
+        internal static string GetColumnName(this IProperty property)
         {
             return property.Relational().ColumnName;
         }

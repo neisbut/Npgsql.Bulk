@@ -48,12 +48,18 @@ namespace Npgsql.Bulk
 
         public bool IsInitialized { get; private set; }
 
-        public Action<T, NpgsqlBinaryImporter, DbContext> ClientDataWriterAction { get; private set; }
-        public Action<T, NpgsqlBinaryImporter, DbContext> ClientDataWithKeyWriterAction { get; private set; }
-        public Dictionary<string, Action<T, NpgsqlDataReader>> IdentityValuesWriterActions { get; private set; }
+        public Action<T, NpgsqlBinaryImporter, DbContext> WriterForInsertAction { get; private set; }
+        public Action<T, NpgsqlBinaryImporter, DbContext> WriterForUpdateAction { get; private set; }
+        public Dictionary<string, Action<T, NpgsqlDataReader>> InsertIdentityValuesWriterActions { get; private set; }
+
+        public Dictionary<string, Action<T, NpgsqlDataReader>> UpdateIdentityValuesWriterActions { get; private set; }
+
+        public Func<T, long> ClassifyOptionals { get; private set; }
 
 #if EFCore
         // public Action<T, EntityEntry, Dictionary<string, ValueGenerator>> AutoGenerateValues { get; private set; }
+
+
 
         FieldBuilder convertersListField;
 
@@ -82,99 +88,118 @@ namespace Npgsql.Bulk
             EntityInfo entityInfo,
             Func<Type, NpgsqlDataReader, string, object> readerFunc)
         {
-            MappingInfo[] clientDataInfos = entityInfo.ClientDataInfos;
-            MappingInfo[] clientDataWithKeyInfos = entityInfo.ClientDataWithKeysInfos;
-            MappingInfo[] identityMappingInfos = entityInfo.DbGeneratedInfos;
+            CreateWriterMethod("WriterForInsertAction", entityInfo.InsertClientDataInfos);
+            CreateWriterMethod("WriterForUpdateAction", entityInfo.UpdateClientDataWithKeysInfos);
 
-            var identByTableName = identityMappingInfos.GroupBy(x => x.TableName).ToList();
-
-            CreateWriterMethod("ClientDataWriter", clientDataInfos);
-            CreateWriterMethod("ClientDataWithKeyWriter", clientDataWithKeyInfos);
-
-
-            foreach (var byTableName in identByTableName)
-                CreateReaderMethod($"IdentityValuesWriter_{byTableName.Key}", byTableName.ToArray(), readerFunc);
-
+            foreach (var byTableName in entityInfo.InsertDbGeneratedInfos.GroupBy(x => x.TableName))
+                CreateReaderMethod($"IdentityValuesWriter_{byTableName.Key}_Insert", byTableName.ToArray(), readerFunc);
+            foreach (var byTableName in entityInfo.UpdateDbGeneratedInfos.GroupBy(x => x.TableName))
+                CreateReaderMethod($"IdentityValuesWriter_{byTableName.Key}_Update", byTableName.ToArray(), readerFunc);
 
 #if EFCore
+            CreateClassifyOptionals(entityInfo.InsertClientDataInfos.Union(entityInfo.UpdateClientDataWithKeysInfos).ToArray());
+
             //CreateAutoGenerateMethods("AutoGenerateValues", entityInfo.PropertyToGenerators);
             generatedType = typeBuilder.CreateTypeInfo().AsType();
 #else
             generatedType = typeBuilder.CreateType();
 #endif
 
-            ClientDataWriterAction = (Action<T, NpgsqlBinaryImporter, DbContext>)generatedType.GetMethod("ClientDataWriter")
+            WriterForInsertAction = (Action<T, NpgsqlBinaryImporter, DbContext>)generatedType.GetMethod("WriterForInsertAction")
                 .CreateDelegate(typeof(Action<T, NpgsqlBinaryImporter, DbContext>));
-            ClientDataWithKeyWriterAction = (Action<T, NpgsqlBinaryImporter, DbContext>)generatedType.GetMethod("ClientDataWithKeyWriter")
+            WriterForUpdateAction = (Action<T, NpgsqlBinaryImporter, DbContext>)generatedType.GetMethod("WriterForUpdateAction")
                 .CreateDelegate(typeof(Action<T, NpgsqlBinaryImporter, DbContext>));
-            IdentityValuesWriterActions = new Dictionary<string, Action<T, NpgsqlDataReader>>();
 
-            foreach (var byTableName in identByTableName)
-                IdentityValuesWriterActions[byTableName.Key] =
-                    (Action<T, NpgsqlDataReader>)generatedType.GetMethod($"IdentityValuesWriter_{byTableName.Key}")
+            InsertIdentityValuesWriterActions = new Dictionary<string, Action<T, NpgsqlDataReader>>();
+            UpdateIdentityValuesWriterActions = new Dictionary<string, Action<T, NpgsqlDataReader>>();
+
+            foreach (var byTableName in entityInfo.InsertDbGeneratedInfos.GroupBy(x => x.TableName))
+                InsertIdentityValuesWriterActions[byTableName.Key] =
+                    (Action<T, NpgsqlDataReader>)generatedType.GetMethod($"IdentityValuesWriter_{byTableName.Key}_Insert")
+                        .CreateDelegate(typeof(Action<T, NpgsqlDataReader>));
+
+            foreach (var byTableName in entityInfo.UpdateDbGeneratedInfos.GroupBy(x => x.TableName))
+                UpdateIdentityValuesWriterActions[byTableName.Key] =
+                    (Action<T, NpgsqlDataReader>)generatedType.GetMethod($"IdentityValuesWriter_{byTableName.Key}_Update")
                         .CreateDelegate(typeof(Action<T, NpgsqlDataReader>));
 
 #if EFCore
-            //AutoGenerateValues = (Action<T, EntityEntry, Dictionary<string, ValueGenerator>>)generatedType.GetMethod("AutoGenerateValues")
-            //    .CreateDelegate(typeof(Action<T, EntityEntry, Dictionary<string, ValueGenerator>>));
-
             generatedType.GetField("Converters")?.SetValue(null, converters.Select(x => x.ConvertToProvider).ToArray());
 
-            ValueHelper<T>.MappingInfos = clientDataWithKeyInfos.ToDictionary(x => x.QualifiedColumnName);
+            ValueHelper<T>.MappingInfos = entityInfo.InsertClientDataInfos
+                .Union(entityInfo.UpdateClientDataWithKeysInfos)
+                .ToDictionary(x => x.QualifiedColumnName);
+
+            ClassifyOptionals = (Func<T, long>)generatedType.GetMethod("ClassifyOptionals")
+               .CreateDelegate(typeof(Func<T, long>));
+#else
+            ClassifyOptionals = (_) => 0;
 #endif
 
             IsInitialized = true;
         }
 
+#if EFCore
+        private void CreateClassifyOptionals(MappingInfo[] infos)
+        {
+            var methodBuilder = typeBuilder.DefineMethod(
+                "ClassifyOptionals",
+                MethodAttributes.Public | MethodAttributes.Static,
+                typeof(long),
+                new[] { typeof(T) });
+
+            var ilOut = methodBuilder.GetILGenerator();
+            ilOut.Emit(OpCodes.Ldc_I8, (long)0);
+
+            foreach (var info in infos.Where(x => x.IsSpecifiedFlag > 0))
+            {
+                var targetType = info.ValueConverter?.ProviderClrType ?? info.DbProperty.ClrType;
+
+                ilOut.Emit(OpCodes.Ldarg_0);
+                ilOut.Emit(OpCodes.Callvirt, info.Property.GetGetMethod());
+                
+                ilOut.Emit(OpCodes.Ldstr, info.QualifiedColumnName);
+
+                ilOut.Emit(OpCodes.Ldc_I8, info.IsSpecifiedFlag);
+
+                ilOut.Emit(OpCodes.Call, typeof(ValueHelper<T>).GetMethod(nameof(ValueHelper<T>.GetIsSpecifiedFlag))
+                    .MakeGenericMethod(targetType));
+
+                ilOut.Emit(OpCodes.Add);
+            }
+
+            ilOut.Emit(OpCodes.Ret);
+        }
+#endif
         private void WriteValueGet(ILGenerator ilOut, MappingInfo info, MethodInfo getValueMethod)
         {
 
 #if EFCore
-            if (info.ValueConverter != null)
+            var targetType = info.ValueConverter?.ProviderClrType ?? info.DbProperty.ClrType;
+
+            ilOut.Emit(OpCodes.Ldarg_0);
+            ilOut.Emit(OpCodes.Ldstr, info.QualifiedColumnName);
+            ilOut.Emit(OpCodes.Ldarg_2);
+
+            if (info.Property != null)
             {
-                convertersListField = convertersListField ??
-                    typeBuilder.DefineField("Converters", typeof(Func<object, object>[]),
-                        FieldAttributes.Public | FieldAttributes.Static);
-
-                int convIndex = converters.IndexOf(info.ValueConverter);
-                if (convIndex < 0)
-                {
-                    converters.Add(info.ValueConverter);
-                    convIndex = converters.Count - 1;
-                }
-
-                ilOut.Emit(OpCodes.Ldsfld, convertersListField);
-                ilOut.Emit(OpCodes.Ldc_I4_S, convIndex);
-                ilOut.Emit(OpCodes.Ldelem_Ref);
-
                 ilOut.Emit(OpCodes.Ldarg_0);
                 ilOut.Emit(getValueMethod.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, getValueMethod);
-
-                ilOut.Emit(OpCodes.Callvirt, typeof(Func<object, object>).GetMethod("Invoke"));
-
-                if (info.ValueConverter.ProviderClrType.IsValueType)
-                    ilOut.Emit(OpCodes.Unbox_Any, info.ValueConverter.ProviderClrType);
-                else
-                    ilOut.Emit(OpCodes.Castclass, info.ValueConverter.ProviderClrType);
-
-                return;
             }
-            else if (getValueMethod == null)
+            else
             {
-                
-                ilOut.Emit(OpCodes.Ldarg_0);
-                ilOut.Emit(OpCodes.Ldstr, info.QualifiedColumnName);
-                ilOut.Emit(OpCodes.Ldarg_2);
-                ilOut.Emit(OpCodes.Call, typeof(ValueHelper<T>).GetMethod(nameof(ValueHelper<T>.Get))
-                    .MakeGenericMethod(info.DbProperty.ClrType));
-                
-                return;
+                ilOut.Emit(OpCodes.Ldnull);
             }
-#endif
+
+            ilOut.Emit(OpCodes.Call, typeof(ValueHelper<T>).GetMethod(nameof(ValueHelper<T>.Get))
+                .MakeGenericMethod(targetType, info.DbProperty.ClrType));
+
+#else
             ilOut.Emit(OpCodes.Ldarg_0);
             ilOut.Emit(getValueMethod.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, getValueMethod);
-        }
+#endif
 
+        }
 
 
         private void CreateWriterMethod(string methodName, MappingInfo[] infos)

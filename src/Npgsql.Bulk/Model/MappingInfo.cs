@@ -69,8 +69,6 @@ namespace Npgsql.Bulk.Model
 
         public NpgsqlDbType NpgsqlType { get; set; }
 
-        public bool IsDbGenerated { get; set; }
-
 #if EFCore
         public ValueGenerator LocalGenerator { get; set; }
 
@@ -87,6 +85,12 @@ namespace Npgsql.Bulk.Model
         public bool IsNullableInClr { get; private set; }
 
         public bool DoUpdate { get; set; } = true;
+
+        public bool DoInsert { get; set; } = true;
+
+        public bool ReadBack { get; set; }
+
+        public long IsSpecifiedFlag { get; set; }
 
     }
 }
