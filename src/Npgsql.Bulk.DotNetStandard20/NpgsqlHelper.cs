@@ -105,24 +105,24 @@ namespace Npgsql.Bulk
             return GetQualifiedName(relational.GetTableName(), relational.GetSchema());
         }
 
-#if NETSTANDARD2_0
+//#if NETSTANDARD2_0
 
-        internal static string GetTableName(this IEntityType entity)
-        {
-            return entity.GetTableName();
-        }
+//        internal static string GetTableName(this IEntityType entity)
+//        {
+//            return entity.GetTableName();
+//        }
 
-        internal static string GetSchema(this IEntityType entity)
-        {
-            return entity.GetSchema();
-        }
+//        internal static string GetSchema(this IEntityType entity)
+//        {
+//            return entity.GetSchema();
+//        }
 
-        internal static string GetColumnName(this IProperty property)
-        {
-            return property.GetColumnName();
-        }
+//        internal static string GetColumnName(this IProperty property)
+//        {
+//            return property.GetColumnName();
+//        }
 
-#endif
+//#endif
 
     }
 }
