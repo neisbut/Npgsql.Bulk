@@ -109,17 +109,17 @@ namespace Npgsql.Bulk
 
         internal static string GetTableName(this IEntityType entity)
         {
-            return entity.Relational().TableName;
+            return entity.GetTableName();
         }
 
         internal static string GetSchema(this IEntityType entity)
         {
-            return entity.Relational().Schema;
+            return entity.GetSchema();
         }
 
         internal static string GetColumnName(this IProperty property)
         {
-            return property.Relational().ColumnName;
+            return property.GetColumnName();
         }
 
 #endif
