@@ -42,7 +42,11 @@ namespace Npgsql.Bulk
                     ORDER BY ordinal_position";
             var param = new NpgsqlParameter("@tableName", tableName);
 
-            return context.Database.SqlQuery<ColumnInfo>(sql, param).ToList();
+            var columnInfos = context.Database.SqlQuery<ColumnInfo>(sql, param).ToList();
+            if (!columnInfos.Any())
+                throw new InvalidOperationException($"Table {tableName} is not found");
+
+            return columnInfos;
         }
 
         public List<MappingInfo> GetMetadata(DbContext context, Type type)

@@ -31,6 +31,7 @@ namespace Npgsql.Bulk
 
             var tableName = GetTableName(context, type);
             var columnsInfo = NpgsqlBulkUploader.RelationalHelper.GetColumnsInfo(context, tableName);
+
             if (entityType.BaseType != null)
             {
                 var baseTableName = GetTableName(context, entityType.BaseType.ClrType);

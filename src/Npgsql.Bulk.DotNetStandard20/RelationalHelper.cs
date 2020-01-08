@@ -59,6 +59,10 @@ namespace Npgsql.Bulk
                         });
                     }
                 }
+
+                if (!result.Any())
+                    throw new InvalidOperationException($"Table {tableName} is not found");
+
                 return result;
             }
         }

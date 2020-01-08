@@ -52,7 +52,9 @@ namespace Npgsql.Bulk.IntegrationTests.DotNetStandard20
 
             // When HasComputedColumnSql used -> should not have Id in Insert and Update
             Assert.DoesNotContain(info.InsertClientDataInfos, x => x.Property.Name == "Id");
-            Assert.DoesNotContain(info.UpdateClientDataWithKeysInfos, x => x.Property.Name == "Id");
+
+            // Key is needed for Update
+            Assert.Contains(info.UpdateClientDataWithKeysInfos, x => x.Property.Name == "Id");
 
             var ctx2 = new TestContext<Tuple<long>>((builder) =>
             {
