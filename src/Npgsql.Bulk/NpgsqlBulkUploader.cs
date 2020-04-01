@@ -44,12 +44,17 @@ namespace Npgsql.Bulk
         /// </summary>
         public TableLockLevel LockLevelOnUpdate { get; set; } = TableLockLevel.ShareRowExclusive;
 
-        public NpgsqlBulkUploader(DbContext context)
-        {
-            this.context = context;
-        }
+		public NpgsqlBulkUploader(DbContext context, bool clearCache = false)
+		{
+			this.context = context;
 
-        internal static NpgsqlDbType GetNpgsqlType(ColumnInfo info)
+			if (clearCache)
+			{
+				Cache.Clear();
+			}
+		}
+
+		internal static NpgsqlDbType GetNpgsqlType(ColumnInfo info)
         {
             switch (info.ColumnType)
             {
