@@ -27,6 +27,7 @@ namespace Npgsql.Bulk.DAL
             modelBuilder.Entity<Address>().Property(x => x.PostalCode)
                 .HasConversion(x => "1" + x, x => x.Substring(1));
 
+            modelBuilder.Entity<Address>().UseXminAsConcurrencyToken();
         }
     }
 

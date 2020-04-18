@@ -43,7 +43,9 @@ namespace Npgsql.Bulk
             }
 
             int optinalIndex = 0;
-            var innerList = entityType.GetProperties()
+            var innerList = entityType
+                .GetProperties()
+                .Where(x=> x.GetColumnName() != "xmin") // For now we don't support xmin
                 .Select(x =>
                 {
                     var relational = x.DeclaringEntityType;

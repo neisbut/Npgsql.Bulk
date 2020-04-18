@@ -1,6 +1,7 @@
 ﻿using Npgsql.Bulk.DAL;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Common;
 using System.Data.Entity;
 using System.Diagnostics;
@@ -14,6 +15,7 @@ namespace Npgsql.Bulk
     {
         static void Main()
         {
+
 #if NETSTANDARD
             DbProviderFactories.RegisterFactory("Npgsql", Npgsql.NpgsqlFactory.Instance);
 #endif

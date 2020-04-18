@@ -175,7 +175,9 @@ namespace Npgsql.Bulk
                 return value;
 
             var actual = value.GetType();
-            if (expectedType == actual)
+            if (value == DBNull.Value)
+                return null;
+            else if (expectedType == actual)
                 return reader[columnName];
             else if (actual == typeof(DateTimeOffset) && expectedType == typeof(DateTime))
                 return ((DateTimeOffset)value).DateTime;
