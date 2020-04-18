@@ -24,8 +24,8 @@ namespace Npgsql.Bulk
     /// </summary>
     public class NpgsqlBulkUploader
     {
-        private static readonly ConcurrentDictionary<Type, EntityInfo> Cache = new ConcurrentDictionary<Type, EntityInfo>();
-        private static readonly Dictionary<Type, object> EntityInfoLocks = new Dictionary<Type, object>();
+        private static readonly ConcurrentDictionary<string, EntityInfo> Cache = new ConcurrentDictionary<string, EntityInfo>();
+        private static readonly Dictionary<string, object> EntityInfoLocks = new Dictionary<string, object>();
 
         private readonly DbContext context;
         private static string uniqueTablePrefix = Guid.NewGuid().ToString().Replace("-", "_");
@@ -908,8 +908,8 @@ namespace Npgsql.Bulk
 
         private EntityInfo GetEntityInfo<T>()
         {
-            var type = typeof(T);
-            if (Cache.TryGetValue(type, out EntityInfo info))
+            var key = $"{context.GetType().FullName}-{typeof(T).FullName}";
+            if (Cache.TryGetValue(key, out EntityInfo info))
             {
                 return info;
             }
@@ -918,15 +918,15 @@ namespace Npgsql.Bulk
                 object typeLocker;
                 lock (EntityInfoLocks)
                 {
-                    if (!EntityInfoLocks.TryGetValue(type, out typeLocker))
+                    if (!EntityInfoLocks.TryGetValue(key, out typeLocker))
                     {
-                        EntityInfoLocks[type] = typeLocker = new object();
+                        EntityInfoLocks[key] = typeLocker = new object();
                     }
                 }
                 lock (typeLocker)
                 {
-                    info = Cache.GetOrAdd(type, (x) => CreateEntityInfo<T>());
-                    EntityInfoLocks.Remove(type);
+                    info = Cache.GetOrAdd(key, (x) => CreateEntityInfo<T>());
+                    EntityInfoLocks.Remove(key);
                 }
 
                 return info;
