@@ -182,7 +182,10 @@ namespace Npgsql.Bulk
             else if (actual == typeof(DateTimeOffset) && expectedType == typeof(DateTime))
                 return ((DateTimeOffset)value).DateTime;
             else
-                return Convert.ChangeType(value, expectedType);
+            {
+                var nullableSubtype = Nullable.GetUnderlyingType(expectedType);
+                return Convert.ChangeType(value, nullableSubtype ?? expectedType);
+            }
         }
 
         public void Insert<T>(IEnumerable<T> entities)

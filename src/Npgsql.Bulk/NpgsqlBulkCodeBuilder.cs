@@ -346,7 +346,7 @@ namespace Npgsql.Bulk
                 ilOut.Emit(OpCodes.Ldstr, info.ColumnInfo.ColumnName);
                 ilOut.Emit(OpCodes.Call, readerFunc.GetMethodInfo());
                 ilOut.Emit(OpCodes.Unbox_Any, info.Property.PropertyType);
-                ilOut.Emit(OpCodes.Callvirt, info.Property.GetSetMethod());
+                ilOut.Emit(OpCodes.Callvirt, info.Property.GetSetMethod(true));
             }
 
             ilOut.Emit(OpCodes.Ret);
