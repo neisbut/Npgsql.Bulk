@@ -69,7 +69,9 @@ namespace Npgsql.Bulk
 
                     var indexes = ((Microsoft.EntityFrameworkCore.Metadata.Internal.Property)x).PropertyIndexes;
                     long optionalFlag = 0;
-                    if (indexes.StoreGenerationIndex >= 0 && localGenerator == null)
+                    
+                    // We don't support genertion based on Foreign Keys. 
+                    if (indexes.StoreGenerationIndex >= 0 && !x.IsForeignKey() && localGenerator == null)
                     {
                         optionalFlag = 1 << optinalIndex;
                         optinalIndex++;

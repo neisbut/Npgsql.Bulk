@@ -569,7 +569,7 @@ namespace Npgsql.Bulk
         public void Import<T>(IEnumerable<T> entities)
         {
             var mapping = GetEntityInfo<T>();
-            if (mapping.InsertQueryParts.Count > 1)
+            if (mapping.InsertQueryParts[0].Count > 1)
                 throw new NotSupportedException($"Import doesn't support entities with inheritance for now");
 
             var conn = RelationalHelper.GetNpgsqlConnection(context);
@@ -798,7 +798,7 @@ namespace Npgsql.Bulk
         public async Task ImportAsync<T>(IEnumerable<T> entities)
         {
             var mapping = GetEntityInfo<T>();
-            if (mapping.InsertQueryParts.Count > 1)
+            if (mapping.InsertQueryParts[0].Count > 1)
                 throw new NotSupportedException($"Import doesn't support entities with inheritance for now");
 
             var conn = RelationalHelper.GetNpgsqlConnection(context);
