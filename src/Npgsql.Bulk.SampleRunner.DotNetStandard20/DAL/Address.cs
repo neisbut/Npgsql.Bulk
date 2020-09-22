@@ -6,6 +6,23 @@ using NpgsqlTypes;
 
 namespace Npgsql.Bulk.SampleRunner.DotNetStandard20.DAL
 {
+    public enum AddressType
+    {
+        Type1,
+        Type2,
+    }
+    public enum AddressTypeInt
+    {
+        First = 0,
+        Second = 1,
+    }
+
+    public enum UnmappedEnum
+    {
+        A = 0,
+        B = 1,
+    }
+
     [Table("addresses", Schema = "public")]
     public class Address: IHasId, IHasId2
     {
@@ -35,6 +52,15 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20.DAL
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
+
+        [Column("address_type")]
+        public AddressType AddressType { get; set; }
+
+        [Column("address_type_int")]
+        public AddressTypeInt AddressTypeInt { get; set; }
+
+        [Column("unmapped_enum")]
+        public UnmappedEnum UnmappedEnum { get; set; }
 
     }
 }

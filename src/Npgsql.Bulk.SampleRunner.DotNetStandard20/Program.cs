@@ -42,7 +42,10 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
                     HouseNumber = i + 1,
                     PostalCode = codes[i % codes.Length],
                     ExtraHouseNumber = extraNumbers[i % extraNumbers.Length],
-                    Duration = new NpgsqlTypes.NpgsqlRange<DateTime>(DateTime.Now, DateTime.Now)
+                    Duration = new NpgsqlTypes.NpgsqlRange<DateTime>(DateTime.Now, DateTime.Now),
+                    AddressType = i % 2 == 0 ? AddressType.Type1 : AddressType.Type2,
+                    AddressTypeInt = i % 2 == 0 ? AddressTypeInt.First : AddressTypeInt.Second,
+                    UnmappedEnum = i % 2 == 0 ? UnmappedEnum.A : UnmappedEnum.B,
                 }).ToList();
 
             var uploader = new NpgsqlBulkUploader(context);
