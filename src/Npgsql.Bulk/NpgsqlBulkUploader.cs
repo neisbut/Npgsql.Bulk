@@ -247,9 +247,9 @@ namespace Npgsql.Bulk
                 sql = $"ALTER TABLE {tempTableName} ADD COLUMN __index integer";
                 context.Database.ExecuteSqlRaw(sql);
 #else
-                await context.Database.ExecuteSqlCommand(sql);
+                context.Database.ExecuteSqlCommand(sql);
                 sql = $"ALTER TABLE {tempTableName} ADD COLUMN __index integer";
-                await context.Database.ExecuteSqlCommand(sql);
+                context.Database.ExecuteSqlCommand(sql);
 #endif
 
 #if EFCore
@@ -273,7 +273,7 @@ namespace Npgsql.Bulk
 #if EFCoreRaw
                         context.Database.ExecuteSqlRaw($"TRUNCATE TABLE " + tempTableName);
 #else
-                        await context.Database.ExecuteSqlCommand($"TRUNCATE TABLE " + tempTableName);
+                        context.Database.ExecuteSqlCommand($"TRUNCATE TABLE " + tempTableName);
 #endif
 
                         WriteInsertPortion(bucket, mapping, conn, tempTableName, codeBuilder);
