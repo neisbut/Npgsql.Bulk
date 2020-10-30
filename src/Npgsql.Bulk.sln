@@ -20,13 +20,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.SampleRunner.Do
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.IntegrationTests.DotNetStandard20", "Npgsql.Bulk.IntegrationTests.DotNetStandard20\Npgsql.Bulk.IntegrationTests.DotNetStandard20.csproj", "{7FD417F6-25A1-46D6-A416-03358FBFBEC4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.DotNetStandard21", "Npgsql.Bulk.DotNetStandard21\Npgsql.Bulk.DotNetStandard21.csproj", "{25A92752-58EF-4BE0-9637-92030314A3DE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.DotNetStandard21", "Npgsql.Bulk.DotNetStandard21\Npgsql.Bulk.DotNetStandard21.csproj", "{25A92752-58EF-4BE0-9637-92030314A3DE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.SampleRunner.DotNetStandard21", "Npgsql.Bulk.SampleRunner.DotNetStandard21\Npgsql.Bulk.SampleRunner.DotNetStandard21.csproj", "{00426175-AB90-47DF-B64C-E655A64BE663}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.DotNetStandard21Ef6", "Npgsql.Bulk.DotNetStandard21Ef6\Npgsql.Bulk.DotNetStandard21Ef6.csproj", "{F00E1DDF-960C-4D49-A322-35A79B080BFC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.SampleRunner.DotNetStandard21Ef6", "Npgsql.Bulk.SampleRunner.DotNetStandard21Ef6\Npgsql.Bulk.SampleRunner.DotNetStandard21Ef6.csproj", "{197EB1EE-DD3D-4BF1-9CBC-1FADBBA77F8E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.DotNet5", "Npgsql.Bulk.DotNet5\Npgsql.Bulk.DotNet5.csproj", "{E55967CD-E415-457B-979E-3B01EF3E0547}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -70,6 +72,10 @@ Global
 		{197EB1EE-DD3D-4BF1-9CBC-1FADBBA77F8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{197EB1EE-DD3D-4BF1-9CBC-1FADBBA77F8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{197EB1EE-DD3D-4BF1-9CBC-1FADBBA77F8E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E55967CD-E415-457B-979E-3B01EF3E0547}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E55967CD-E415-457B-979E-3B01EF3E0547}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E55967CD-E415-457B-979E-3B01EF3E0547}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E55967CD-E415-457B-979E-3B01EF3E0547}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
