@@ -265,8 +265,22 @@ namespace Npgsql.Bulk
                     }
                     else if (fieldType.GetTypeInfo().IsEnum)
                     {
-                        ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
-                        ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(Enum.GetUnderlyingType(fieldType.GetTypeInfo())));
+                        // If an enum's type is not known then assume Npgsql will map it to the
+                        // correct postgres enum type.  If the CLR enum wasn't already registered
+                        // with Npgsql then Npgsql will throw an exception with an informative
+                        // error message.
+                        if (info.NpgsqlType == NpgsqlTypes.NpgsqlDbType.Unknown)
+                        {
+                            ilOut.Emit(OpCodes.Callvirt, writeMethodShort.MakeGenericMethod(fieldType.GetTypeInfo()));
+                        }
+                        else
+                        {
+                            // Else, this CLR enum does not map to a postgres enum, so assume the
+                            // field type in postgres matches the CLR enum's underlying type,
+                            // e.g. "int".
+                            ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
+                            ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(Enum.GetUnderlyingType(fieldType.GetTypeInfo())));
+                        }
                     }
                     else
                     {
@@ -297,8 +311,23 @@ namespace Npgsql.Bulk
 
                     if (underlying.IsEnum)
                     {
-                        ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
-                        ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(Enum.GetUnderlyingType(underlying)));
+                        // If an enum's type is not known then assume Npgsql will map it to the
+                        // correct postgres enum type.  If the CLR enum wasn't already registered
+                        // with Npgsql then Npgsql will throw an exception with an informative
+                        // error message.
+                        if (info.NpgsqlType == NpgsqlTypes.NpgsqlDbType.Unknown)
+                        {
+                            ilOut.Emit(OpCodes.Callvirt, writeMethodShort.MakeGenericMethod(underlying));
+                        }
+                        else
+                        {
+                            // Else, this CLR enum does not map to a postgres enum, so assume the
+                            // field type in postgres matches the CLR enum's underlying type,
+                            // e.g. "int".
+                            ilOut.Emit(OpCodes.Ldc_I4_S, (int)info.NpgsqlType);
+                            ilOut.Emit(OpCodes.Call, writeMethodFull.MakeGenericMethod(Enum.GetUnderlyingType(underlying)));
+                        }
+                        
                     }
                     else if (info.NpgsqlType == NpgsqlTypes.NpgsqlDbType.Range)
                     {

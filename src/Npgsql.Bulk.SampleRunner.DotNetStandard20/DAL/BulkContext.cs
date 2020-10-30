@@ -9,6 +9,12 @@ namespace Npgsql.Bulk.DAL
 {
     public class BulkContext : DbContext
     {
+        static BulkContext()
+        {
+            NpgsqlConnection.GlobalTypeMapper.MapEnum<AddressType>();
+            NpgsqlConnection.GlobalTypeMapper.MapEnum<AddressTypeInt>();
+        }
+
         public DbSet<Address> Addresses { get; set; }
 
         public DbSet<Address2EF> Addresses2 { get; set; }
@@ -18,6 +24,9 @@ namespace Npgsql.Bulk.DAL
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.HasPostgresEnum<AddressType>();
+            modelBuilder.HasPostgresEnum<AddressTypeInt>();
 
             modelBuilder.Entity<Address>().Property(x => x.CreatedAt)
                 .HasValueGenerator<ValueGen>().ValueGeneratedOnAdd();

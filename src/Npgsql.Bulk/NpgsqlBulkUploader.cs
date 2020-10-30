@@ -49,7 +49,7 @@ namespace Npgsql.Bulk
             this.context = context;
         }
 
-        internal static NpgsqlDbType GetNpgsqlType(ColumnInfo info)
+        internal NpgsqlDbType GetNpgsqlType(ColumnInfo info)
         {
             switch (info.ColumnType)
             {
@@ -144,6 +144,18 @@ namespace Npgsql.Bulk
 
                     if (string.Equals(info?.ColumnTypeExtra, "array", StringComparison.OrdinalIgnoreCase) || info.ColumnType.StartsWith("_"))
                         return NpgsqlDbType.Array;
+                    
+                    // Allow postgres enum types to be mapped to CLR enums
+                    var clrType = RelationalHelper.GetNpgsqlConnection(context).TypeMapper.Mappings
+                        .FirstOrDefault(mapping => mapping.PgTypeName == info.ColumnType)?
+                        .ClrTypes
+                        .FirstOrDefault();
+                    if (clrType != null && clrType.IsEnum)
+                    {
+                        // NpgsqlDbType.Unknown is a dummy value.  The actual postgres type
+                        // will be determined later by Npgsql.
+                        return NpgsqlDbType.Unknown;
+                    }
 
                     throw new NotImplementedException($"Column type '{info.ColumnType}' is not supported");
             }
