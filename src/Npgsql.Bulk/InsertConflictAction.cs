@@ -111,7 +111,7 @@ namespace Npgsql.Bulk
             }
         }
 
-        internal object GetSql(EntityInfo mapping)
+        internal object GetSql(EntityInfo mapping, string targetQualifiedTableName)
         {
             string conflictAction;
 
@@ -128,7 +128,7 @@ namespace Npgsql.Bulk
 
                 if (conflictProperty != null)
                 {
-                    if (!mapping.PropToMappingInfo.TryGetValue(conflictProperty.Name, out MappingInfo info))
+                    if (!mapping.PropToMappingInfo.TryGetValue(targetQualifiedTableName + "." + conflictProperty.Name, out MappingInfo info))
                         throw new InvalidOperationException($"Can't find property {conflictProperty} in mapping");
 
                     conflictTarget = $"({NpgsqlHelper.GetQualifiedName(info.ColumnInfo.ColumnName)})";
@@ -138,7 +138,7 @@ namespace Npgsql.Bulk
                 sb.Append("DO UPDATE SET ");
                 foreach (var updateProp in updateProperties)
                 {
-                    if (!mapping.PropToMappingInfo.TryGetValue(updateProp.Name, out MappingInfo info))
+                    if (!mapping.PropToMappingInfo.TryGetValue(targetQualifiedTableName + "." + updateProp.Name, out MappingInfo info))
                         throw new InvalidOperationException($"Can't find property {updateProp} in mapping");
 
                     sb.Append(NpgsqlHelper.GetQualifiedName(info.ColumnInfo.ColumnName));

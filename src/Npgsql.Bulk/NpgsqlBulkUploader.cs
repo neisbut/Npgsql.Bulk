@@ -251,7 +251,7 @@ namespace Npgsql.Bulk
             var transaction = RelationalHelper.EnsureOrStartTransaction(context, DefaultIsolationLevel);
             var mapping = GetEntityInfo<T>();
 
-            var ignoreDuplicatesStatement = onConflict?.GetSql(mapping);
+            // var ignoreDuplicatesStatement = onConflict?.GetSql(mapping);
 
 
             try
@@ -279,7 +279,7 @@ namespace Npgsql.Bulk
                     WriteInsertPortion(list, mapping, conn, tempTableName, codeBuilder);
 
                     InsertPortion<T>(list, mapping.InsertQueryParts[0], conn, codeBuilder,
-                        tempTableName, ignoreDuplicatesStatement, onConflict);
+                        tempTableName, mapping, onConflict);
                 }
                 else
                 {
@@ -297,7 +297,7 @@ namespace Npgsql.Bulk
                             conn,
                             codeBuilder,
                             tempTableName,
-                            ignoreDuplicatesStatement,
+                            mapping,
                             onConflict);
                     }
                 }
@@ -350,7 +350,7 @@ namespace Npgsql.Bulk
             NpgsqlConnection conn,
             NpgsqlBulkCodeBuilder<T> codeBuilder,
             string tempTableName,
-            object ignoreDuplicatesStatement,
+            EntityInfo entityInfo,
             InsertConflictAction onConflict)
         {
             // 3. Insert into real table from temp one
@@ -359,6 +359,8 @@ namespace Npgsql.Bulk
                 using (var cmd = conn.CreateCommand())
                 {
                     cmd.CommandTimeout = CommandTimeout ?? cmd.CommandTimeout;
+                    
+                    var ignoreDuplicatesStatement = onConflict?.GetSql(entityInfo, insertPart.TableNameQualified);
 
                     var baseInsertCmd = $"INSERT INTO {insertPart.TableNameQualified} ({insertPart.TargetColumnNamesQueryPart}) " +
                         $"SELECT {insertPart.SourceColumnNamesQueryPart} FROM {tempTableName} ORDER BY __index {ignoreDuplicatesStatement}";
@@ -415,7 +417,7 @@ namespace Npgsql.Bulk
             NpgsqlConnection conn,
             NpgsqlBulkCodeBuilder<T> codeBuilder,
             string tempTableName,
-            object ignoreDuplicatesStatement,
+            EntityInfo entityInfo,
             InsertConflictAction onConflict)
         {
             // 3. Insert into real table from temp one
@@ -424,6 +426,8 @@ namespace Npgsql.Bulk
                 using (var cmd = conn.CreateCommand())
                 {
                     cmd.CommandTimeout = CommandTimeout ?? cmd.CommandTimeout;
+
+                    var ignoreDuplicatesStatement = onConflict?.GetSql(entityInfo, insertPart.TableNameQualified);
 
                     var baseInsertCmd = $"INSERT INTO {insertPart.TableNameQualified} ({insertPart.TargetColumnNamesQueryPart}) " +
                         $"SELECT {insertPart.SourceColumnNamesQueryPart} FROM {tempTableName} ORDER BY __index {ignoreDuplicatesStatement}";
@@ -655,8 +659,6 @@ namespace Npgsql.Bulk
             var transaction = RelationalHelper.EnsureOrStartTransaction(context, DefaultIsolationLevel);
             var mapping = GetEntityInfo<T>();
 
-            var ignoreDuplicatesStatement = onConflict?.GetSql(mapping);
-
             try
             {
                 // 0. Prepare variables
@@ -681,7 +683,7 @@ namespace Npgsql.Bulk
                     WriteInsertPortion(list, mapping, conn, tempTableName, codeBuilder);
 
                     await InsertPortionAsync<T>(list, mapping.InsertQueryParts[0], conn, codeBuilder,
-                        tempTableName, ignoreDuplicatesStatement, onConflict);
+                        tempTableName, mapping, onConflict);
                 }
                 else
                 {
@@ -699,7 +701,7 @@ namespace Npgsql.Bulk
                             conn,
                             codeBuilder,
                             tempTableName,
-                            ignoreDuplicatesStatement,
+                            mapping,
                             onConflict);
                     }
                 }
@@ -1087,7 +1089,7 @@ namespace Npgsql.Bulk
                 TableName = tableName,
                 CodeBuilder = codeBuilder,
                 MappingInfos = mappingInfo,
-                PropToMappingInfo = mappingInfo.Where(x => x.Property != null).ToDictionary(x => x.Property.Name),
+                PropToMappingInfo = mappingInfo.Where(x => x.Property != null).ToDictionary(x => x.TableNameQualified + "." + x.Property.Name),
                 TableNames = mappingInfo.Select(x => x.TableName).Distinct().ToArray(),
                 InsertClientDataInfos = mappingInfo.Where(x => x.DoInsert).ToArray(),
                 UpdateClientDataWithKeysInfos = mappingInfo.Where(x => x.DoUpdate || x.IsKey).ToArray(),
