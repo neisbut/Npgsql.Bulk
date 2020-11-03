@@ -332,11 +332,13 @@ namespace Npgsql.Bulk
             // 2. Import into temp table
             using (var importer = conn.BeginBinaryImport($"COPY {tempTableName} ({mapping.CopyColumnsForInsertQueryPart}, __index) FROM STDIN (FORMAT BINARY)"))
             {
+                var opContext = new OperationContext(context, false);
+
                 var index = 1;
                 foreach (var item in list)
                 {
                     importer.StartRow();
-                    codeBuilder.WriterForInsertAction(item, importer, context);
+                    codeBuilder.WriterForInsertAction(item, importer, opContext);
                     importer.Write(index, NpgsqlDbType.Integer);
                     index++;
                 }
@@ -541,6 +543,7 @@ namespace Npgsql.Bulk
                 var tableName = mapping.TableNameQualified;
                 var tempTableName = GetUniqueName("_temp_");
                 var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
+                var opContext = new OperationContext(context, false);
 
                 // 1. Create temp table 
                 var sql = $"CREATE TEMP TABLE {tempTableName} ON COMMIT DROP AS {mapping.SelectSourceForUpdateQuery} LIMIT 0";
@@ -553,7 +556,7 @@ namespace Npgsql.Bulk
                     foreach (var item in entities)
                     {
                         importer.StartRow();
-                        codeBuilder.WriterForUpdateAction(item, importer, context);
+                        codeBuilder.WriterForUpdateAction(item, importer, opContext);
                     }
                     importer.Complete();
                 }
@@ -613,6 +616,7 @@ namespace Npgsql.Bulk
             {
                 // Prepare variables
                 var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
+                var opContext = new OperationContext(context, true);
 
                 // Import
                 using (var importer = conn.BeginBinaryImport($"COPY {mapping.TableNameQualified} ({mapping.InsertQueryParts[0][0].TargetColumnNamesQueryPart}) FROM STDIN (FORMAT BINARY)"))
@@ -620,7 +624,7 @@ namespace Npgsql.Bulk
                     foreach (var item in entities)
                     {
                         importer.StartRow();
-                        codeBuilder.WriterForInsertAction(item, importer, context);
+                        codeBuilder.WriterForInsertAction(item, importer, opContext);
                     }
                     importer.Complete();
                 }
@@ -769,6 +773,7 @@ namespace Npgsql.Bulk
                 var tableName = mapping.TableNameQualified;
                 var tempTableName = GetUniqueName("_temp_");
                 var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
+                var opContext = new OperationContext(context, false);
 
                 // 1. Create temp table 
                 var sql = $"CREATE TEMP TABLE {tempTableName} ON COMMIT DROP AS {mapping.SelectSourceForUpdateQuery} LIMIT 0";
@@ -782,7 +787,7 @@ namespace Npgsql.Bulk
                     foreach (var item in entities)
                     {
                         importer.StartRow();
-                        codeBuilder.WriterForUpdateAction(item, importer, context);
+                        codeBuilder.WriterForUpdateAction(item, importer, opContext);
                     }
                     importer.Complete();
                 }
@@ -842,6 +847,7 @@ namespace Npgsql.Bulk
             {
                 // Prepare variables
                 var codeBuilder = (NpgsqlBulkCodeBuilder<T>)mapping.CodeBuilder;
+                var opContext = new OperationContext(context, true);
 
                 // Import
                 using (var importer = conn.BeginBinaryImport($"COPY {mapping.TableNameQualified} ({mapping.InsertQueryParts[0][0].TargetColumnNamesQueryPart}) FROM STDIN (FORMAT BINARY)"))
@@ -849,7 +855,7 @@ namespace Npgsql.Bulk
                     foreach (var item in entities)
                     {
                         importer.StartRow();
-                        codeBuilder.WriterForInsertAction(item, importer, context);
+                        codeBuilder.WriterForInsertAction(item, importer, opContext);
                     }
                     importer.Complete();
                 }

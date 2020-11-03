@@ -26,6 +26,7 @@
     <Compile Include="..\Npgsql.Bulk\NpgsqlBulkCodeBuilder.cs" Link="NpgsqlBulkCodeBuilder.cs" />
     <Compile Include="..\Npgsql.Bulk\NpgsqlBulkUploader.cs" Link="NpgsqlBulkUploader.cs" />
     <Compile Include="..\Npgsql.Bulk\NpgsqlHelper.cs" Link="NpgsqlHelper.cs" />
+    <Compile Include="..\Npgsql.Bulk\OperationContext.cs" Link="OperationContext.cs" />
     <Compile Include="..\Npgsql.Bulk\RelationalHelper.cs" Link="RelationalHelper.cs" />
   </ItemGroup>
 

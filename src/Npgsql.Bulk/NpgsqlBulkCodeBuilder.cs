@@ -48,8 +48,8 @@ namespace Npgsql.Bulk
 
         public bool IsInitialized { get; private set; }
 
-        public Action<T, NpgsqlBinaryImporter, DbContext> WriterForInsertAction { get; private set; }
-        public Action<T, NpgsqlBinaryImporter, DbContext> WriterForUpdateAction { get; private set; }
+        public Action<T, NpgsqlBinaryImporter, OperationContext> WriterForInsertAction { get; private set; }
+        public Action<T, NpgsqlBinaryImporter, OperationContext> WriterForUpdateAction { get; private set; }
         public Dictionary<string, Action<T, NpgsqlDataReader>> InsertIdentityValuesWriterActions { get; private set; }
 
         public Dictionary<string, Action<T, NpgsqlDataReader>> UpdateIdentityValuesWriterActions { get; private set; }
@@ -105,10 +105,10 @@ namespace Npgsql.Bulk
             generatedType = typeBuilder.CreateType();
 #endif
 
-            WriterForInsertAction = (Action<T, NpgsqlBinaryImporter, DbContext>)generatedType.GetMethod("WriterForInsertAction")
-                .CreateDelegate(typeof(Action<T, NpgsqlBinaryImporter, DbContext>));
-            WriterForUpdateAction = (Action<T, NpgsqlBinaryImporter, DbContext>)generatedType.GetMethod("WriterForUpdateAction")
-                .CreateDelegate(typeof(Action<T, NpgsqlBinaryImporter, DbContext>));
+            WriterForInsertAction = (Action<T, NpgsqlBinaryImporter, OperationContext>)generatedType.GetMethod("WriterForInsertAction")
+                .CreateDelegate(typeof(Action<T, NpgsqlBinaryImporter, OperationContext>));
+            WriterForUpdateAction = (Action<T, NpgsqlBinaryImporter, OperationContext>)generatedType.GetMethod("WriterForUpdateAction")
+                .CreateDelegate(typeof(Action<T, NpgsqlBinaryImporter, OperationContext>));
 
             InsertIdentityValuesWriterActions = new Dictionary<string, Action<T, NpgsqlDataReader>>();
             UpdateIdentityValuesWriterActions = new Dictionary<string, Action<T, NpgsqlDataReader>>();
@@ -209,7 +209,7 @@ namespace Npgsql.Bulk
                 methodName,
                 MethodAttributes.Public | MethodAttributes.Static,
                 typeof(void),
-                new[] { typeof(T), typeof(NpgsqlBinaryImporter), typeof(DbContext) });
+                new[] { typeof(T), typeof(NpgsqlBinaryImporter), typeof(OperationContext) });
 
             var ilOut = methodBuilder.GetILGenerator();
             var localVars = new Dictionary<Type, LocalBuilder>();

@@ -12,18 +12,27 @@ namespace Npgsql.Bulk
 
         internal static Dictionary<string, MappingInfo> MappingInfos;
 
-        public static TResult Get<TResult, TClr>(T model, string propName, DbContext context, TClr localValue)
+        public static TResult Get<TResult, TClr>(T model, string propName, OperationContext opContext, TClr localValue)
         {
             var info = MappingInfos[propName];
 
 #pragma warning disable EF1001 // Internal EF Core API usage.
-            var sm = ((IDbContextDependencies)context).StateManager;
-            var entry = sm.GetOrCreateEntry(model);
+
             object currentValue;
-            if (info.Property == null)
-                currentValue = entry.GetCurrentValue(info.DbProperty);
+
+            if (!opContext.IsImport)
+            {
+                var sm = ((IDbContextDependencies)opContext.Context).StateManager;
+                var entry = sm.GetOrCreateEntry(model);
+                if (info.Property == null)
+                    currentValue = entry.GetCurrentValue(info.DbProperty);
+                else
+                    currentValue = localValue;
+            }
             else
+            {
                 currentValue = localValue;
+            }
 
 #pragma warning restore EF1001 // Internal EF Core API usage.
 

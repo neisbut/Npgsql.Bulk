@@ -38,6 +38,7 @@
     <Compile Include="..\Npgsql.Bulk\Model\UpdateQueryParts.cs" Link="Model\UpdateQueryParts.cs" />
     <Compile Include="..\Npgsql.Bulk\NpgsqlBulkCodeBuilder.cs" Link="NpgsqlBulkCodeBuilder.cs" />
     <Compile Include="..\Npgsql.Bulk\NpgsqlBulkUploader.cs" Link="NpgsqlBulkUploader.cs" />
+    <Compile Include="..\Npgsql.Bulk\OperationContext.cs" Link="OperationContext.cs" />
   </ItemGroup>
 
 </Project>

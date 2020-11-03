@@ -88,6 +88,7 @@
     <Compile Include="NpgsqlBulkCodeBuilder.cs" />
     <Compile Include="NpgsqlBulkUploader.cs" />
     <Compile Include="NpgsqlHelper.cs" />
+    <Compile Include="OperationContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RelationalHelper.cs" />
   </ItemGroup>
