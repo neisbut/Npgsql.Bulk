@@ -37,6 +37,8 @@ namespace Npgsql.Bulk.DAL
                 .HasConversion(x => "1" + x, x => x.Substring(1));
 
             modelBuilder.Entity<Address>().UseXminAsConcurrencyToken();
+
+            // modelBuilder.Entity<Address>().Property(x => x.HiLo).UseHiLo();
         }
     }
 

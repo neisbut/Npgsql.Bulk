@@ -31,7 +31,14 @@ namespace Npgsql.Bulk
             }
             else
             {
-                currentValue = localValue;
+                if (info.DbProperty.IsShadowProperty())
+                {
+                    currentValue = info.LocalGenerator.Next(null);
+                }
+                else
+                {
+                    currentValue = localValue;
+                }
             }
 
 #pragma warning restore EF1001 // Internal EF Core API usage.

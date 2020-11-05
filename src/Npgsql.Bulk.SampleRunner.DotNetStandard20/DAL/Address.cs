@@ -62,5 +62,8 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20.DAL
         [Column("unmapped_enum")]
         public UnmappedEnum UnmappedEnum { get; set; }
 
+        //[Column("hi_lo")]
+        //public int HiLo { get; set; }
+
     }
 }

@@ -1,9 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
-using Microsoft.EntityFrameworkCore.Internal;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Microsoft.EntityFrameworkCore.ValueGeneration;
 using Npgsql.Bulk.DAL;
 using Npgsql.Bulk.SampleRunner.DotNetStandard20.DAL;
 using System;
@@ -32,6 +28,7 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
             optionsBuilder.UseNpgsql(Configuration.ConnectionString);
 
             var context = new BulkContext(optionsBuilder.Options);
+            context.Database.Migrate();
 
             context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
 
@@ -102,6 +99,8 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 
             TestDerived(context);
 
+            Console.WriteLine();
+            Console.WriteLine("Time to press any key...");
             Console.ReadLine();
         }
 

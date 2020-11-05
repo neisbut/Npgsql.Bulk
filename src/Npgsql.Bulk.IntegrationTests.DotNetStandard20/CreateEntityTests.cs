@@ -91,18 +91,20 @@ namespace Npgsql.Bulk.IntegrationTests.DotNetStandard20
                 }
             };
 
+            var opContext = new OperationContext(ctx, false);
+
             // test default value
             var entity = new Entity1();
-            var valueInt = ValueHelper<Entity1>.Get<int, int>(entity, "Number", ctx, entity.Number);
+            var valueInt = ValueHelper<Entity1>.Get<int, int>(entity, "Number", opContext, entity.Number);
             Assert.Equal(123, valueInt);
-            var valueGuid = ValueHelper<Entity1>.Get<Guid, Guid>(entity, "Id", ctx, entity.Id);
+            var valueGuid = ValueHelper<Entity1>.Get<Guid, Guid>(entity, "Id", opContext, entity.Id);
             Assert.NotEqual(Guid.Empty, valueGuid);
 
             // value is specified
             entity = new Entity1() { Number = 321, Id = Guid.NewGuid() };
-            valueInt = ValueHelper<Entity1>.Get<int, int>(entity, "Number", ctx, entity.Number);
+            valueInt = ValueHelper<Entity1>.Get<int, int>(entity, "Number", opContext, entity.Number);
             Assert.Equal(321, valueInt);
-            valueGuid = ValueHelper<Entity1>.Get<Guid, Guid>(entity, "Id", ctx, entity.Id);
+            valueGuid = ValueHelper<Entity1>.Get<Guid, Guid>(entity, "Id", opContext, entity.Id);
             Assert.Equal(entity.Id, valueGuid);
         }
 

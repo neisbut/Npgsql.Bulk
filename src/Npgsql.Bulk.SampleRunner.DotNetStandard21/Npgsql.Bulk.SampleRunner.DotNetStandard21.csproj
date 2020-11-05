@@ -17,6 +17,8 @@
     <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20190929100913_AddIntervalColumn.Designer.cs" Link="Migrations\20190929100913_AddIntervalColumn.Designer.cs" />
     <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20191102121859_AddDerivedTable.cs" Link="Migrations\20191102121859_AddDerivedTable.cs" />
     <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20191102121859_AddDerivedTable.Designer.cs" Link="Migrations\20191102121859_AddDerivedTable.Designer.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20201105032656_AddAddressType.cs" Link="Migrations\20201105032656_AddAddressType.cs" />
+    <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20201105032656_AddAddressType.Designer.cs" Link="Migrations\20201105032656_AddAddressType.Designer.cs" />
     <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\BulkContextModelSnapshot.cs" Link="Migrations\BulkContextModelSnapshot.cs" />
     <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Program.cs" Link="Program.cs" />
     <Compile Include="..\Npgsql.Bulk.SampleRunner\DAL\IHasId.cs" Link="DAL\IHasId.cs" />
