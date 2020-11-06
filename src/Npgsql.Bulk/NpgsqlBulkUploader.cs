@@ -374,14 +374,14 @@ namespace Npgsql.Bulk
                         if (!string.IsNullOrEmpty(insertPart.Returning))
                         {
                             cmd.CommandText = $"WITH inserted as (\n {baseInsertCmd} RETURNING {insertPart.Returning} \n ), \n";
-                            cmd.CommandText += $"source as (\n SELECT *, ROW_NUMBER() OVER (ORDER BY {insertPart.Returning}) as __index FROM inserted \n ) \n";
+                            cmd.CommandText += $"source as (\n SELECT *, ROW_NUMBER() OVER () as __index FROM inserted \n ) \n";
                             cmd.CommandText += $"SELECT * FROM source ORDER BY __index";
                         }
                     }
                     else
                     {
                         cmd.CommandText = $"WITH inserted as (\n {baseInsertCmd} RETURNING {insertPart.Returning} \n ), \n";
-                        cmd.CommandText += $"source as (\n SELECT *, ROW_NUMBER() OVER (ORDER BY {insertPart.Returning}) as __index FROM inserted \n ) \n";
+                        cmd.CommandText += $"source as (\n SELECT *, ROW_NUMBER() OVER () as __index FROM inserted \n ) \n";
                         cmd.CommandText += $"UPDATE {tempTableName} SET {insertPart.ReturningSetQueryPart} FROM source WHERE {tempTableName}.__index = source.__index\n";
                         cmd.CommandText += $"RETURNING {insertPart.Returning}";
                     }
@@ -1110,43 +1110,9 @@ namespace Npgsql.Bulk
 #endif
 
             var tableNames = mappingInfo.Select(x => x.TableNameQualified).Distinct().ToList();
-            //var grouppedByTables = mappingInfo.GroupBy(x => x.TableName)
-            //    .Select(x => new
-            //    {
-            //        TableName = x.Key,
-            //        x.First().TableNameQualified,
-            //        KeyInfos = x.Where(y => y.IsKey).ToList(),
-            //        ClientDataInfos = x.Where(y => y.DoInsert).ToList(),
-            //        ReturningInfos = x.Where(y => y.ReadBack).ToList()
-            //    })
-            //    .ToList();
 
             info.InsertQueryParts = new ConcurrentDictionary<long, List<InsertQueryParts>>();
             info.InsertQueryParts[0] = GetInsertQueryParts(mappingInfo, 0);
-
-            //info.InsertQueryParts = grouppedByTables.Select(x =>
-            //{
-            //    var others = grouppedByTables.Where(y => y.TableName != x.TableName)
-            //        .SelectMany(y => y.ClientDataInfos)
-            //        .Select(y => new
-            //        {
-            //            My = y,
-            //            Others = x.ReturningInfos.FirstOrDefault(ri => ri.Property.Name == y.Property.Name)
-            //        })
-            //        .Where(y => y.Others != null)
-            //        .ToList();
-
-            //    return new InsertQueryParts()
-            //    {
-            //        TableName = x.TableName,
-            //        TableNameQualified = x.TableNameQualified,
-            //        TargetColumnNamesQueryPart = string.Join(", ", x.ClientDataInfos.Select(y => NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName))),
-            //        SourceColumnNamesQueryPart = string.Join(", ", x.ClientDataInfos.Select(y => NpgsqlHelper.GetQualifiedName(y.TempAliasedColumnName))),
-            //        Returning = string.Join(", ", x.ReturningInfos.Select(y => NpgsqlHelper.GetQualifiedName(y.ColumnInfo.ColumnName))),
-            //        ReturningSetQueryPart = string.Join(", ", others.Select(y => $"{NpgsqlHelper.GetQualifiedName(y.My.TempAliasedColumnName)} " +
-            //            $" = source.{NpgsqlHelper.GetQualifiedName(y.Others.ColumnInfo.ColumnName)}"))
-            //    };
-            //}).ToList();
 
             info.SelectSourceForInsertQuery = "SELECT " +
                 string.Join(", ", info.InsertClientDataInfos

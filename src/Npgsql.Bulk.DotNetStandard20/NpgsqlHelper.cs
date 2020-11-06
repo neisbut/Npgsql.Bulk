@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 using Npgsql.Bulk.Model;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -45,7 +46,7 @@ namespace Npgsql.Bulk
             int optinalIndex = 0;
             var innerList = entityType
                 .GetProperties()
-                .Where(x=> x.GetColumnName() != "xmin") // For now we don't support xmin
+                .Where(x => x.GetColumnName() != "xmin") // For now we don't support xmin
                 .Select(x =>
                 {
                     var relational = x.DeclaringEntityType;
@@ -62,14 +63,18 @@ namespace Npgsql.Bulk
                     {
                         isDbGenerated = true;
                     }
-                    else if (x.GetAnnotations().Any(y => y.Name == "Npgsql:ValueGenerationStrategy"))
+                    else
                     {
-                        isDbGenerated = true;
+                        var autoGenStrategy = x.GetAnnotations().FirstOrDefault(y => y.Name == "Npgsql:ValueGenerationStrategy");
+                        if (autoGenStrategy != null)
+                        {
+                            isDbGenerated = ((NpgsqlValueGenerationStrategy)autoGenStrategy.Value) != NpgsqlValueGenerationStrategy.SequenceHiLo;
+                        }
                     }
 
                     var indexes = ((Microsoft.EntityFrameworkCore.Metadata.Internal.Property)x).PropertyIndexes;
                     long optionalFlag = 0;
-                    
+
                     // We don't support genertion based on Foreign Keys. 
                     if (indexes.StoreGenerationIndex >= 0 && !x.IsForeignKey() && localGenerator == null)
                     {
@@ -109,25 +114,6 @@ namespace Npgsql.Bulk
             var relational = context.Model.FindEntityType(t);
             return GetQualifiedName(relational.GetTableName(), relational.GetSchema());
         }
-
-//#if NETSTANDARD2_0
-
-//        internal static string GetTableName(this IEntityType entity)
-//        {
-//            return entity.GetTableName();
-//        }
-
-//        internal static string GetSchema(this IEntityType entity)
-//        {
-//            return entity.GetSchema();
-//        }
-
-//        internal static string GetColumnName(this IProperty property)
-//        {
-//            return property.GetColumnName();
-//        }
-
-//#endif
 
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Newtonsoft.Json;
 using Npgsql.Bulk.DAL;
 using Npgsql.Bulk.SampleRunner.DotNetStandard20.DAL;
 using System;
@@ -47,7 +48,7 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 
             var uploader = new NpgsqlBulkUploader(context);
 
-            
+
             context.Attach(data[0]);
             data[0].AddressId = 11;
 
@@ -63,6 +64,8 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
             uploader.Insert(data);
             sw.Stop();
             Console.WriteLine($"Dynamic solution inserted {data.Count} records for {sw.Elapsed }");
+
+            // CompareValues(data, new BulkContext(optionsBuilder.Options));
 
             context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
 
@@ -102,6 +105,22 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
             Console.WriteLine();
             Console.WriteLine("Time to press any key...");
             Console.ReadLine();
+        }
+
+        private static void CompareValues(List<Address> data, BulkContext bulkContext)
+        {
+            var dbData = bulkContext.Addresses.OrderBy(x => x.AddressId).ToArray();
+            var local = data.OrderBy(x => x.AddressId).ToArray();
+
+            for (var i = 0; i < dbData.Length; i++)
+            {
+                var dbItem = JsonConvert.SerializeObject(dbData[i]);
+                var locItem = JsonConvert.SerializeObject(local[i]);
+                if (dbItem != locItem)
+                {
+                    Console.WriteLine("Oops");
+                }
+            }
         }
 
         static async Task TestAsync(BulkContext context, NpgsqlBulkUploader uploader, List<Address> data)
