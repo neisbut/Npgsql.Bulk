@@ -40,4 +40,8 @@
     <Compile Include="..\Npgsql.Bulk\NpgsqlBulkUploader.cs" Link="NpgsqlBulkUploader.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Npgsql.Bulk.DotNetStandard21\Npgsql.Bulk.DotNetStandard21.csproj" />
+  </ItemGroup>
+
 </Project>
