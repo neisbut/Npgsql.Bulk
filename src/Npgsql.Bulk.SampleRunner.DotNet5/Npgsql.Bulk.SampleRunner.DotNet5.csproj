@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+     
+
+    <ItemGroup>
+        <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\BulkContextFactory.cs" Link="BulkContextFactory.cs" />
+        <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Configuration.cs" Link="Configuration.cs" />
+        <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\DAL\Address.cs" Link="DAL\Address.cs" />
+        <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\DAL\Address2EF.cs" Link="DAL\Address2EF.cs" />
+        <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\DAL\BulkContext.cs" Link="DAL\BulkContext.cs" />
+        <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20190510131433_Initial.cs" Link="Migrations\20190510131433_Initial.cs" />
+        <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20190510131433_Initial.Designer.cs" Link="Migrations\20190510131433_Initial.Designer.cs" />
+        <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20190929100913_AddIntervalColumn.cs" Link="Migrations\20190929100913_AddIntervalColumn.cs" />
+        <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20190929100913_AddIntervalColumn.Designer.cs" Link="Migrations\20190929100913_AddIntervalColumn.Designer.cs" />
+        <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20191102121859_AddDerivedTable.cs" Link="Migrations\20191102121859_AddDerivedTable.cs" />
+        <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20191102121859_AddDerivedTable.Designer.cs" Link="Migrations\20191102121859_AddDerivedTable.Designer.cs" />
+        <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20201105032656_AddAddressType.cs" Link="Migrations\20201105032656_AddAddressType.cs" />
+        <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\20201105032656_AddAddressType.Designer.cs" Link="Migrations\20201105032656_AddAddressType.Designer.cs" />
+        <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Migrations\BulkContextModelSnapshot.cs" Link="Migrations\BulkContextModelSnapshot.cs" />
+        <Compile Include="..\Npgsql.Bulk.SampleRunner.DotNetStandard20\Program.cs" Link="Program.cs" />
+        <Compile Include="..\Npgsql.Bulk.SampleRunner\DAL\IHasId.cs" Link="DAL\IHasId.cs" />
+        <Compile Include="..\Npgsql.Bulk.SampleRunner\DAL\IHasId2.cs" Link="DAL\IHasId2.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.0" />
+      <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="5.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Npgsql.Bulk.DotNetStandard20\Npgsql.Bulk.DotNetStandard20.csproj" />
+    </ItemGroup>
+
+
+ 
+ 
+
+</Project>

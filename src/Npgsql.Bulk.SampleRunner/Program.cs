@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Data;
 using System.Data.Common;
 using System.Data.Entity;
 using System.Diagnostics;
@@ -338,7 +339,7 @@ namespace Npgsql.Bulk
                 using (var cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = $"INSERT INTO addresses ({dataColumns}) SELECT {dataColumns} FROM addresses_temp_input RETURNING {dbGenColumns}";
-                    using (var reader = cmd.ExecuteReader())
+                    using (var reader = cmd.ExecuteReader(CommandBehavior.Default))
                     {
                         reader.Read();
 

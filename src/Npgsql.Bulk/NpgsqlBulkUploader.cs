@@ -32,6 +32,8 @@ namespace Npgsql.Bulk
         private static int tablesCounter = 0;
         private static readonly ConcurrentDictionary<string, object> partialCodeBuilders = new ConcurrentDictionary<string, object>();
 
+        private static MethodInfo CompleteMethodInfo = typeof(NpgsqlBinaryImporter).GetMethod("Complete");
+
         internal static IRelationalHelper RelationalHelper = new RelationalHelper();
 
         /// <summary>
@@ -342,7 +344,10 @@ namespace Npgsql.Bulk
                     importer.Write(index, NpgsqlDbType.Integer);
                     index++;
                 }
-                importer.Complete();
+
+                // Temp solution!!!
+                //importer.Complete();
+                CompleteMethodInfo.Invoke(importer, null);
             }
         }
 
@@ -361,7 +366,7 @@ namespace Npgsql.Bulk
                 using (var cmd = conn.CreateCommand())
                 {
                     cmd.CommandTimeout = CommandTimeout ?? cmd.CommandTimeout;
-                    
+
                     var ignoreDuplicatesStatement = onConflict?.GetSql(entityInfo, insertPart.TableNameQualified);
 
                     var baseInsertCmd = $"INSERT INTO {insertPart.TableNameQualified} ({insertPart.TargetColumnNamesQueryPart}) " +
@@ -386,7 +391,7 @@ namespace Npgsql.Bulk
                         cmd.CommandText += $"RETURNING {insertPart.Returning}";
                     }
 
-                    using (var reader = cmd.ExecuteReader())
+                    using (var reader = cmd.ExecuteReader(CommandBehavior.Default))
                     {
                         // 4. Propagate computed value
                         if (!string.IsNullOrEmpty(insertPart.Returning))
@@ -547,7 +552,7 @@ namespace Npgsql.Bulk
 
                 // 1. Create temp table 
                 var sql = $"CREATE TEMP TABLE {tempTableName} ON COMMIT DROP AS {mapping.SelectSourceForUpdateQuery} LIMIT 0";
-                
+
                 ExecuteNonQuery(conn, sql);
 
                 // 2. Import into temp table
@@ -558,7 +563,10 @@ namespace Npgsql.Bulk
                         importer.StartRow();
                         codeBuilder.WriterForUpdateAction(item, importer, opContext);
                     }
-                    importer.Complete();
+                    
+                    // Temp solution!!!
+                    //importer.Complete();
+                    CompleteMethodInfo.Invoke(importer, null);
                 }
 
                 // 3. Insert into real table from temp one
@@ -626,7 +634,10 @@ namespace Npgsql.Bulk
                         importer.StartRow();
                         codeBuilder.WriterForInsertAction(item, importer, opContext);
                     }
-                    importer.Complete();
+
+                    // Temp solution!!!
+                    //importer.Complete();
+                    CompleteMethodInfo.Invoke(importer, null);
                 }
 
                 // Commit
@@ -789,7 +800,10 @@ namespace Npgsql.Bulk
                         importer.StartRow();
                         codeBuilder.WriterForUpdateAction(item, importer, opContext);
                     }
-                    importer.Complete();
+
+                    // Temp solution!!!
+                    //importer.Complete();
+                    CompleteMethodInfo.Invoke(importer, null);
                 }
 
                 // 3. Insert into real table from temp one
@@ -857,7 +871,10 @@ namespace Npgsql.Bulk
                         importer.StartRow();
                         codeBuilder.WriterForInsertAction(item, importer, opContext);
                     }
-                    importer.Complete();
+
+                    // Temp solution!!!
+                    //importer.Complete();
+                    CompleteMethodInfo.Invoke(importer, null);
                 }
 
                 // Commit
@@ -884,7 +901,7 @@ namespace Npgsql.Bulk
 
         private void ExecuteNonQuery(Npgsql.NpgsqlConnection connection, string command)
         {
-            using(var cmd = connection.CreateCommand())
+            using (var cmd = connection.CreateCommand())
             {
                 cmd.CommandTimeout = CommandTimeout ?? cmd.CommandTimeout;
 

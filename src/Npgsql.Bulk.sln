@@ -22,13 +22,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.IntegrationTest
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.DotNetStandard21", "Npgsql.Bulk.DotNetStandard21\Npgsql.Bulk.DotNetStandard21.csproj", "{25A92752-58EF-4BE0-9637-92030314A3DE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.SampleRunner.DotNetStandard21", "Npgsql.Bulk.SampleRunner.DotNetStandard21\Npgsql.Bulk.SampleRunner.DotNetStandard21.csproj", "{00426175-AB90-47DF-B64C-E655A64BE663}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.SampleRunner.DotNetStandard21", "Npgsql.Bulk.SampleRunner.DotNetStandard21\Npgsql.Bulk.SampleRunner.DotNetStandard21.csproj", "{00426175-AB90-47DF-B64C-E655A64BE663}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.DotNetStandard21Ef6", "Npgsql.Bulk.DotNetStandard21Ef6\Npgsql.Bulk.DotNetStandard21Ef6.csproj", "{F00E1DDF-960C-4D49-A322-35A79B080BFC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.DotNetStandard21Ef6", "Npgsql.Bulk.DotNetStandard21Ef6\Npgsql.Bulk.DotNetStandard21Ef6.csproj", "{F00E1DDF-960C-4D49-A322-35A79B080BFC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.SampleRunner.DotNetStandard21Ef6", "Npgsql.Bulk.SampleRunner.DotNetStandard21Ef6\Npgsql.Bulk.SampleRunner.DotNetStandard21Ef6.csproj", "{197EB1EE-DD3D-4BF1-9CBC-1FADBBA77F8E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.SampleRunner.DotNetStandard21Ef6", "Npgsql.Bulk.SampleRunner.DotNetStandard21Ef6\Npgsql.Bulk.SampleRunner.DotNetStandard21Ef6.csproj", "{197EB1EE-DD3D-4BF1-9CBC-1FADBBA77F8E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.DotNet5", "Npgsql.Bulk.DotNet5\Npgsql.Bulk.DotNet5.csproj", "{E55967CD-E415-457B-979E-3B01EF3E0547}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.SampleRunner.DotNet5", "Npgsql.Bulk.SampleRunner.DotNet5\Npgsql.Bulk.SampleRunner.DotNet5.csproj", "{C4D5775D-9099-49DB-92AA-64A720951D38}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -76,6 +78,10 @@ Global
 		{E55967CD-E415-457B-979E-3B01EF3E0547}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E55967CD-E415-457B-979E-3B01EF3E0547}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E55967CD-E415-457B-979E-3B01EF3E0547}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4D5775D-9099-49DB-92AA-64A720951D38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4D5775D-9099-49DB-92AA-64A720951D38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4D5775D-9099-49DB-92AA-64A720951D38}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4D5775D-9099-49DB-92AA-64A720951D38}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

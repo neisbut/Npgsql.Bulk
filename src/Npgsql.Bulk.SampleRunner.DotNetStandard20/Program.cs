@@ -31,7 +31,7 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
             var context = new BulkContext(optionsBuilder.Options);
             context.Database.Migrate();
 
-            context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
+            context.Database.ExecuteSqlRaw("TRUNCATE addresses CASCADE");
 
             var data = Enumerable.Range(0, 100000)
                 .Select((x, i) => new Address()
@@ -67,7 +67,7 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 
             // CompareValues(data, new BulkContext(optionsBuilder.Options));
 
-            context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
+            context.Database.ExecuteSqlRaw("TRUNCATE addresses CASCADE");
 
             TestViaInterfaceCase(data, context);
 
@@ -78,14 +78,14 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
             sw.Stop();
             Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed }");
 
-            context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
+            context.Database.ExecuteSqlRaw("TRUNCATE addresses CASCADE");
             sw = Stopwatch.StartNew();
             uploader.Import(data);
             sw.Stop();
             Console.WriteLine($"Dynamic solution imported {data.Count} records for {sw.Elapsed }");
 
             // With transaction
-            context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
+            context.Database.ExecuteSqlRaw("TRUNCATE addresses CASCADE");
 
             using (var transaction = new TransactionScope())
             {
@@ -143,14 +143,14 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
             sw.Stop();
             Console.WriteLine($"Dynamic solution updated {data.Count} records for {sw.Elapsed }");
 
-            context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
+            context.Database.ExecuteSqlRaw("TRUNCATE addresses CASCADE");
             sw = Stopwatch.StartNew();
             await uploader.ImportAsync(data);
             sw.Stop();
             Console.WriteLine($"Dynamic solution imported {data.Count} records for {sw.Elapsed }");
 
             // With transaction
-            context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
+            context.Database.ExecuteSqlRaw("TRUNCATE addresses CASCADE");
 
             using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
@@ -180,7 +180,7 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 
         static void TestDerived(BulkContext context)
         {
-            context.Database.ExecuteSqlCommand("TRUNCATE addresses CASCADE");
+            context.Database.ExecuteSqlRaw("TRUNCATE addresses CASCADE");
 
             var data = Enumerable.Range(0, 100000)
                 .Select((x, i) => new Address2EF()

@@ -47,7 +47,7 @@ namespace Npgsql.Bulk
                 cmd.CommandText = sql;
                 cmd.Parameters.Add(param);
                 var result = new List<ColumnInfo>();
-                using (var reader = cmd.ExecuteReader())
+                using (var reader = cmd.ExecuteReader(CommandBehavior.Default))
                 {
                     while (reader.Read())
                     {
