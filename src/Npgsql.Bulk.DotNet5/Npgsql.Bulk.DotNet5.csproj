@@ -41,4 +41,8 @@
     <Compile Include="..\Npgsql.Bulk\OperationContext.cs" Link="OperationContext.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Npgsql.Bulk.DotNetStandard21\Npgsql.Bulk.DotNetStandard21.csproj" />
+  </ItemGroup>
+
 </Project>
