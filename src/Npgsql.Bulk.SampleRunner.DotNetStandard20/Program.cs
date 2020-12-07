@@ -48,6 +48,16 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 
             var uploader = new NpgsqlBulkUploader(context);
 
+            // extra test for insert existing objects
+            var subListAll = data.Take(5).ToList();
+            var subListInsert1 = subListAll.ToList();
+            subListInsert1.RemoveAt(3);
+            subListInsert1.RemoveAt(1);
+            uploader.Insert(subListInsert1);
+
+            uploader.Insert(subListAll, InsertConflictAction.DoNothingColumn("house_number", "extra_house_number"));
+
+            // 
 
             context.Attach(data[0]);
             data[0].AddressId = 11;

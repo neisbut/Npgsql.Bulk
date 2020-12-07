@@ -360,6 +360,106 @@ namespace Npgsql.Bulk
             EntityInfo entityInfo,
             InsertConflictAction onConflict)
         {
+
+            void ReadValuesBack(NpgsqlCommand cmd, Action<T, NpgsqlDataReader> readAction, IEnumerable<T> listNew)
+            {
+                using (var reader = cmd.ExecuteReader(CommandBehavior.Default))
+                {
+                    foreach (var item in listNew)
+                    {
+                        reader.Read();
+                        readAction(item, reader);
+                    }
+                }
+            };
+
+            // 3. Insert into real table from temp one
+            foreach (var insertPart in insertParts)
+            {
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandTimeout = CommandTimeout ?? cmd.CommandTimeout;
+
+                    var ignoreDuplicatesStatement = onConflict?.GetSql(entityInfo, insertPart.TableNameQualified);
+
+                    var analyzeNeeded = false;
+                    var baseInsertCmd = $"INSERT INTO {insertPart.TableNameQualified} ({insertPart.TargetColumnNamesQueryPart}) " +
+                        $"SELECT {insertPart.SourceColumnNamesQueryPart} FROM {tempTableName} ORDER BY __index {ignoreDuplicatesStatement}";
+
+                    // create returning table if needed
+                    if (!string.IsNullOrEmpty(insertPart.Returning))
+                    {
+                        ExecuteNonQuery(conn, $"CREATE TEMP TABLE __returning ON COMMIT DROP AS (SELECT {insertPart.Returning}, 0 as __index FROM {insertPart.TableNameQualified} LIMIT 0)");
+
+                        baseInsertCmd = $"WITH inserted as (\n {baseInsertCmd} RETURNING {insertPart.Returning} \n ) \n";
+                        baseInsertCmd += $"INSERT INTO __returning SELECT *, ROW_NUMBER() OVER () as __index FROM inserted";
+
+                        if (analyzeNeeded)
+                            ExecuteAnalyze(conn, baseInsertCmd);
+                        else
+                            ExecuteNonQuery(conn, baseInsertCmd);
+
+                        if (onConflict == null || !onConflict.IsDoNothing)
+                        {
+                            if (!string.IsNullOrEmpty(insertPart.ReturningSetQueryPart))
+                            {
+                                ExecuteNonQuery(conn,
+                                    $"UPDATE {tempTableName} SET {insertPart.ReturningSetQueryPart} FROM __returning WHERE {tempTableName}.__index = __returning.__index\n");
+                            }
+
+                            // READ __returning values back to client
+                            cmd.CommandText = $"SELECT {insertPart.Returning} FROM __returning";
+                            ReadValuesBack(cmd, codeBuilder.InsertIdentityValuesWriterActions[insertPart.TableName], list);
+                        }
+                        else
+                        {
+                            ExecuteNonQuery(conn, $"CREATE TEMP TABLE __skipped ON COMMIT DROP AS SELECT __index FROM {tempTableName} JOIN {insertPart.TableNameQualified} USING {onConflict.TargetColumns}");
+
+                            ExecuteNonQuery(conn, $"DELETE FROM {tempTableName} WHERE __index IN (SELECT __index FROM __skipped)");
+
+                            ExecuteNonQuery(conn, $"UPDATE {tempTableName} SET __index = ROW_NUMBER() OVER ()");
+
+                            if (!string.IsNullOrEmpty(insertPart.ReturningSetQueryPart))
+                            {
+                                ExecuteNonQuery(conn,
+                                    $"UPDATE {tempTableName} SET {insertPart.ReturningSetQueryPart} FROM __returning WHERE {tempTableName}.__index = __returning.__index\n");
+                            }
+
+                            var skippedInds = new List<int>(list.Count());
+                            cmd.CommandText = "SELECT __index FROM __skipped";
+
+                            using (var reader = cmd.ExecuteReader(CommandBehavior.Default))
+                            {
+                                while (reader.Read())
+                                {
+                                    skippedInds.Add((int)reader[0]);
+                                }
+                            }
+
+                            // READ __returning values back to client + Skipping inds
+                            ReadValuesBack(cmd, codeBuilder.InsertIdentityValuesWriterActions[insertPart.TableName], list);
+                        }
+                    }
+                    else
+                    {
+                        if (analyzeNeeded)
+                            ExecuteAnalyze(conn, baseInsertCmd);
+                        else
+                            ExecuteNonQuery(conn, baseInsertCmd);
+                    }
+                }
+            }
+        }
+
+        private void InsertPortion3<T>(
+            IEnumerable<T> list,
+            List<InsertQueryParts> insertParts,
+            NpgsqlConnection conn,
+            NpgsqlBulkCodeBuilder<T> codeBuilder,
+            string tempTableName,
+            EntityInfo entityInfo,
+            InsertConflictAction onConflict)
+        {
             // 3. Insert into real table from temp one
             foreach (var insertPart in insertParts)
             {
@@ -563,7 +663,7 @@ namespace Npgsql.Bulk
                         importer.StartRow();
                         codeBuilder.WriterForUpdateAction(item, importer, opContext);
                     }
-                    
+
                     // Temp solution!!!
                     //importer.Complete();
                     CompleteMethodInfo.Invoke(importer, null);
@@ -908,6 +1008,11 @@ namespace Npgsql.Bulk
                 cmd.CommandText = command;
                 cmd.ExecuteNonQuery();
             }
+        }
+
+        private void ExecuteAnalyze(Npgsql.NpgsqlConnection connection, string command)
+        {
+            ExecuteNonQuery(connection, command);
         }
 
         private async Task ExecuteNonQueryAsync(Npgsql.NpgsqlConnection connection, string command)

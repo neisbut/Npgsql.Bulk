@@ -12,7 +12,10 @@ namespace Npgsql.Bulk
         /// <summary>
         /// DO NOTHING conflict action
         /// </summary>
-        public static InsertConflictAction DoNothing() => new InsertConflictAction() { doUpdate = false };
+        public static InsertConflictAction DoNothing() => new InsertConflictAction()
+        {
+            doUpdate = false
+        };
 
         /// <summary>
         /// DO NOTHING ( sql )
@@ -25,11 +28,17 @@ namespace Npgsql.Bulk
             conflictTarget = conflictTargetSql
         };
 
-        public static InsertConflictAction DoNothingColumn(string columnName) => DoNothing($"({columnName})");
+        public static InsertConflictAction DoNothingColumn(string columnName) =>
+            DoNothing($"(\"{columnName}\")");
 
-        public static InsertConflictAction DoNothingIndex(string indexName) => DoNothing($"({indexName})");
+        public static InsertConflictAction DoNothingColumn(params string[] columnNames) =>
+            DoNothing("(" + string.Join(", ", columnNames.Select(x => NpgsqlHelper.GetQualifiedName(x))) + ")");
 
-        public static InsertConflictAction DoNothingConstraint(string constraint) => DoNothing($"ON CONSTRAINT {constraint}");
+        public static InsertConflictAction DoNothingIndex(string indexName) =>
+            DoNothing($"(\"{indexName}\")");
+
+        public static InsertConflictAction DoNothingConstraint(string constraint) =>
+            DoNothing($"ON CONSTRAINT \"{constraint}\"");
 
         public static InsertConflictAction Update<T>(string conflictTargetSql, params Expression<Func<T, object>>[] updateProperties) =>
             Update<T>(conflictTargetSql, updateProperties.Select(UnwrapProperty<T>).ToArray());
@@ -74,6 +83,10 @@ namespace Npgsql.Bulk
         string conflictTarget;
         PropertyInfo conflictProperty;
         PropertyInfo[] updateProperties;
+
+        public bool IsDoNothing => !doUpdate;
+
+        public string TargetColumns => conflictTarget;
 
         /// <summary>
         /// ctor for DO NOTHING case
