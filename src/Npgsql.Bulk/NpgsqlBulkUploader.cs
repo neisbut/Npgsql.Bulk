@@ -1033,8 +1033,8 @@ namespace Npgsql.Bulk
 
             // filter by props
             var keyProps = mappingInfo.Where(x => x.IsKey).Select(x => x.Property);
-            var propToInfo = mappingInfo.ToDictionary(x => x.Property);
-            mappingInfo = props.Union(keyProps).Select(x => propToInfo[x]).ToList();
+            var propToInfo = mappingInfo.ToDictionary(x => x.Property.Name, x => x);
+            mappingInfo = props.Union(keyProps).Select(x => propToInfo[x.Name]).ToList();
 
             // key for partial coe builder
             var propNames = typeof(T).FullName + "_" +
