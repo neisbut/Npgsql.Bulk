@@ -109,6 +109,12 @@ namespace Npgsql.Bulk
             return relational.GetTableName();
         }
 
+        internal static string GetTableSchema(DbContext context, Type t)
+        {
+            var relational = context.Model.FindEntityType(t);
+            return relational.GetSchema();
+        }
+
         internal static string GetTableNameQualified(DbContext context, Type t)
         {
             var relational = context.Model.FindEntityType(t);

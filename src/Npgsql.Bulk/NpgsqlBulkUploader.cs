@@ -28,6 +28,7 @@ namespace Npgsql.Bulk
         private static readonly Dictionary<string, object> EntityInfoLocks = new Dictionary<string, object>();
 
         private readonly DbContext context;
+        private readonly bool disableEntitiesTracking;
         private static string uniqueTablePrefix = Guid.NewGuid().ToString().Replace("-", "_");
         private static int tablesCounter = 0;
         private static readonly ConcurrentDictionary<string, object> partialCodeBuilders = new ConcurrentDictionary<string, object>();
@@ -50,6 +51,11 @@ namespace Npgsql.Bulk
         /// Allows to override command execution timeout
         /// </summary>
         public int? CommandTimeout { get; set; }
+
+        public NpgsqlBulkUploader(DbContext context, bool disableEntitiesTracking) : this(context)
+        {
+            this.disableEntitiesTracking = disableEntitiesTracking;
+        }
 
         public NpgsqlBulkUploader(DbContext context)
         {
@@ -225,7 +231,9 @@ namespace Npgsql.Bulk
             NpgsqlBulkCodeBuilder<T> codeBuilders,
             EntityState state)
         {
-            if (infos.PropertyNameToGenerators == null || infos.PropertyNameToGenerators.Count == 0)
+            if (infos.PropertyNameToGenerators == null ||
+                infos.PropertyNameToGenerators.Count == 0 ||
+                disableEntitiesTracking)
                 return;
 
             var sm = ((IDbContextDependencies)context).StateManager;
@@ -519,7 +527,7 @@ namespace Npgsql.Bulk
         public void Update<T>(IEnumerable<T> entities,
             params Expression<Func<T, Object>>[] propertiesToUpdate)
         {
-            var mapping = CreateEntityInfo<T>(
+            var mapping = CreateEntityInfoForPartialUpdate<T>(
                 propertiesToUpdate.Select(x => InsertConflictAction.UnwrapProperty<T>(x)).ToArray());
             UpdateInternal<T>(entities, mapping);
         }
@@ -532,7 +540,7 @@ namespace Npgsql.Bulk
         /// <param name="propertiesToUpdate"></param>
         public void Update<T>(IEnumerable<T> entities, IEnumerable<PropertyInfo> propertiesToUpdate)
         {
-            var mapping = CreateEntityInfo<T>(propertiesToUpdate);
+            var mapping = CreateEntityInfoForPartialUpdate<T>(propertiesToUpdate);
             UpdateInternal<T>(entities, mapping);
         }
 
@@ -563,7 +571,7 @@ namespace Npgsql.Bulk
                         importer.StartRow();
                         codeBuilder.WriterForUpdateAction(item, importer, opContext);
                     }
-                    
+
                     // Temp solution!!!
                     //importer.Complete();
                     CompleteMethodInfo.Invoke(importer, null);
@@ -755,7 +763,7 @@ namespace Npgsql.Bulk
         public Task UpdateAsync<T>(IEnumerable<T> entities,
             params Expression<Func<T, Object>>[] propertiesToUpdate)
         {
-            var mapping = CreateEntityInfo<T>(
+            var mapping = CreateEntityInfoForPartialUpdate<T>(
                 propertiesToUpdate.Select(x => InsertConflictAction.UnwrapProperty<T>(x)).ToArray());
             return UpdateAsyncInternal<T>(entities, mapping);
         }
@@ -768,7 +776,7 @@ namespace Npgsql.Bulk
         /// <param name="propertiesToUpdate"></param>
         public Task UpdateAsync<T>(IEnumerable<T> entities, IEnumerable<PropertyInfo> propertiesToUpdate)
         {
-            var mapping = CreateEntityInfo<T>(propertiesToUpdate);
+            var mapping = CreateEntityInfoForPartialUpdate<T>(propertiesToUpdate);
             return UpdateAsyncInternal<T>(entities, mapping);
         }
 
@@ -989,7 +997,9 @@ namespace Npgsql.Bulk
 
         private EntityInfo GetEntityInfo<T>()
         {
-            var key = $"{context.GetType().FullName}-{typeof(T).FullName}";
+            var schema = NpgsqlHelper.GetTableSchema(context, typeof(T));
+
+            var key = $"{schema}-{context.GetType().FullName}-{typeof(T).FullName}";
             if (Cache.TryGetValue(key, out EntityInfo info))
             {
                 return info;
@@ -1024,7 +1034,7 @@ namespace Npgsql.Bulk
             return CreateEntityInfo<T>(tableName, tableNameQualified, mappingInfo);
         }
 
-        private EntityInfo CreateEntityInfo<T>(IEnumerable<PropertyInfo> props)
+        private EntityInfo CreateEntityInfoForPartialUpdate<T>(IEnumerable<PropertyInfo> props)
         {
             var t = typeof(T);
             var tableName = NpgsqlHelper.GetTableName(context, t);
@@ -1033,7 +1043,7 @@ namespace Npgsql.Bulk
 
             // filter by props
             var keyProps = mappingInfo.Where(x => x.IsKey).Select(x => x.Property);
-            var propToInfo = mappingInfo.ToDictionary(x => x.Property.Name, x => x);
+            var propToInfo = mappingInfo.Where(x => x.Property != null).ToDictionary(x => x.Property.Name);
             mappingInfo = props.Union(keyProps).Select(x => propToInfo[x.Name]).ToList();
 
             // key for partial coe builder
@@ -1047,9 +1057,12 @@ namespace Npgsql.Bulk
             }
             else
             {
+                // Make sure primary code builder exists
+                GetEntityInfo<T>();
+
                 codeBuilder = new NpgsqlBulkCodeBuilder<T>();
                 var info = CreateEntityInfo<T>(tableName, tableNameQualified, mappingInfo, codeBuilder);
-                codeBuilder.InitBuilder(info, ReadValue);
+                codeBuilder.InitBuilder(info, true, ReadValue);
                 partialCodeBuilders.TryAdd(propNames, codeBuilder);
 
                 return info;
@@ -1201,7 +1214,7 @@ namespace Npgsql.Bulk
             info.KeyColumnNames = info.KeyInfos.Select(x => x.ColumnInfo.ColumnName).ToArray();
 
             if (codeBuilderOuter == null)
-                codeBuilder.InitBuilder(info, ReadValue);
+                codeBuilder.InitBuilder(info, false, ReadValue);
 
             return info;
         }
