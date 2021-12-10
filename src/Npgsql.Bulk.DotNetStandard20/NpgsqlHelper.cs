@@ -1,10 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql.Bulk.Model;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using System;
@@ -43,6 +46,8 @@ namespace Npgsql.Bulk
                 }
             }
 
+            var valueGenSelector = ((IInfrastructure<IServiceProvider>)context).Instance.GetService<IValueGeneratorSelector>();
+
             int optinalIndex = 0;
             var innerList = entityType
                 .GetProperties()
@@ -68,15 +73,35 @@ namespace Npgsql.Bulk
                         var autoGenStrategy = x.GetAnnotations().FirstOrDefault(y => y.Name == "Npgsql:ValueGenerationStrategy");
                         if (autoGenStrategy != null)
                         {
-                            isDbGenerated = ((NpgsqlValueGenerationStrategy)autoGenStrategy.Value) != NpgsqlValueGenerationStrategy.SequenceHiLo;
+                            var npgsqlStartegy = (NpgsqlValueGenerationStrategy)autoGenStrategy.Value;
+                            isDbGenerated = npgsqlStartegy != NpgsqlValueGenerationStrategy.SequenceHiLo &&
+                                npgsqlStartegy != NpgsqlValueGenerationStrategy.None;
                         }
                     }
 
+                    if (!isDbGenerated && localGenerator == null)
+                    {
+                        try
+                        {
+                            localGenerator = valueGenSelector.Select(x, entityType);
+                        }
+                        catch
+                        {
+                            // ignore
+                        }
+                    }
+
+#if DotNet6
+                    var readBack = x.GetStoreGeneratedIndex() >= 0;
+#else
                     var indexes = ((Microsoft.EntityFrameworkCore.Metadata.Internal.Property)x).PropertyIndexes;
+                    var readBack = indexes.StoreGenerationIndex >= 0;
+#endif
+
                     long optionalFlag = 0;
 
                     // We don't support genertion based on Foreign Keys. 
-                    if (indexes.StoreGenerationIndex >= 0 && !x.IsForeignKey() && localGenerator == null)
+                    if (readBack && !x.IsForeignKey() && localGenerator == null)
                     {
                         optionalFlag = 1 << optinalIndex;
                         optinalIndex++;
@@ -95,7 +120,7 @@ namespace Npgsql.Bulk
                         DbProperty = x,
                         DoUpdate = !isDbGenerated && x.PropertyInfo != null,    // don't update shadow props
                         DoInsert = !isDbGenerated,                              // do insert of shadow props
-                        ReadBack = indexes.StoreGenerationIndex >= 0,
+                        ReadBack = readBack,
                         IsSpecifiedFlag = optionalFlag
                     };
                 }).ToList();

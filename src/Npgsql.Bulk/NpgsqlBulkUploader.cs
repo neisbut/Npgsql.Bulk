@@ -162,7 +162,19 @@ namespace Npgsql.Bulk
                     if (string.Equals(info?.ColumnTypeExtra, "array", StringComparison.OrdinalIgnoreCase) || info.ColumnType.StartsWith("_"))
                         return NpgsqlDbType.Array;
 
-#if EFCore
+#if DotNet6
+                    // Allow postgres enum types to be mapped to CLR enums
+                    var mapper = RelationalHelper.GetNpgsqlConnection(context).TypeMapper;
+                    var handlers = (ConcurrentDictionary<string, Internal.TypeHandling.NpgsqlTypeHandler>)
+                        mapper.GetType()
+                        .GetField("_handlersByDataTypeName", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .GetValue(mapper);
+
+                    if (handlers.TryGetValue(info.ColumnType, out var _))
+                    {
+                        return NpgsqlDbType.Unknown;
+                    }
+#elif EFCore
                     // Allow postgres enum types to be mapped to CLR enums
                     var clrType = RelationalHelper.GetNpgsqlConnection(context).TypeMapper.Mappings
                         .FirstOrDefault(mapping => mapping.PgTypeName == info.ColumnType)?
@@ -212,6 +224,8 @@ namespace Npgsql.Bulk
                 return reader[columnName];
             else if (actual == typeof(DateTimeOffset) && expectedType == typeof(DateTime))
                 return ((DateTimeOffset)value).DateTime;
+            else if (expectedType.IsEnum && value is int)
+                return Enum.ToObject(expectedType, (int)value);
             else
             {
                 var nullableSubtype = Nullable.GetUnderlyingType(expectedType);
@@ -1043,8 +1057,8 @@ namespace Npgsql.Bulk
 
             // filter by props
             var keyProps = mappingInfo.Where(x => x.IsKey).Select(x => x.Property);
-            var propToInfo = mappingInfo.Where(x => x.Property != null).ToDictionary(x => x.Property);
-            mappingInfo = props.Union(keyProps).Select(x => propToInfo[x]).ToList();
+            var propToInfo = mappingInfo.Where(x => x.Property != null).ToDictionary(x => x.Property.Name);
+            mappingInfo = props.Union(keyProps).Select(x => propToInfo[x.Name]).ToList();
 
             // key for partial coe builder
             var propNames = typeof(T).FullName + "_" +

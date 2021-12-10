@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29324.140
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31919.166
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk", "Npgsql.Bulk\Npgsql.Bulk.csproj", "{688A13D6-824A-498C-AD50-28E860E1DE58}"
 EndProject
@@ -28,9 +28,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.DotNetStandard2
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.SampleRunner.DotNetStandard21Ef6", "Npgsql.Bulk.SampleRunner.DotNetStandard21Ef6\Npgsql.Bulk.SampleRunner.DotNetStandard21Ef6.csproj", "{197EB1EE-DD3D-4BF1-9CBC-1FADBBA77F8E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.DotNet5", "Npgsql.Bulk.DotNet5\Npgsql.Bulk.DotNet5.csproj", "{E55967CD-E415-457B-979E-3B01EF3E0547}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.SampleRunner.DotNet5", "Npgsql.Bulk.SampleRunner.DotNet5\Npgsql.Bulk.SampleRunner.DotNet5.csproj", "{C4D5775D-9099-49DB-92AA-64A720951D38}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.SampleRunner.DotNet5", "Npgsql.Bulk.SampleRunner.DotNet5\Npgsql.Bulk.SampleRunner.DotNet5.csproj", "{C4D5775D-9099-49DB-92AA-64A720951D38}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.DotNet5", "Npgsql.Bulk.DotNet5\Npgsql.Bulk.DotNet5.csproj", "{FB063D36-C1BD-4D15-8E2B-BC285CD58A2D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.DotNet6", "Npgsql.Bulk.DotNet6\Npgsql.Bulk.DotNet6.csproj", "{CEFBB972-DE5D-4023-BCEF-90C7D7776A53}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.SampleRunner.DotNet6", "Npgsql.Bulk.SampleRunner.DotNet6\Npgsql.Bulk.SampleRunner.DotNet6.csproj", "{015BA51E-DF5C-45D4-91C0-37BC49F0E7EF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -74,14 +78,22 @@ Global
 		{197EB1EE-DD3D-4BF1-9CBC-1FADBBA77F8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{197EB1EE-DD3D-4BF1-9CBC-1FADBBA77F8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{197EB1EE-DD3D-4BF1-9CBC-1FADBBA77F8E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E55967CD-E415-457B-979E-3B01EF3E0547}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E55967CD-E415-457B-979E-3B01EF3E0547}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E55967CD-E415-457B-979E-3B01EF3E0547}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E55967CD-E415-457B-979E-3B01EF3E0547}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C4D5775D-9099-49DB-92AA-64A720951D38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C4D5775D-9099-49DB-92AA-64A720951D38}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4D5775D-9099-49DB-92AA-64A720951D38}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C4D5775D-9099-49DB-92AA-64A720951D38}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB063D36-C1BD-4D15-8E2B-BC285CD58A2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB063D36-C1BD-4D15-8E2B-BC285CD58A2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB063D36-C1BD-4D15-8E2B-BC285CD58A2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB063D36-C1BD-4D15-8E2B-BC285CD58A2D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CEFBB972-DE5D-4023-BCEF-90C7D7776A53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CEFBB972-DE5D-4023-BCEF-90C7D7776A53}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CEFBB972-DE5D-4023-BCEF-90C7D7776A53}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CEFBB972-DE5D-4023-BCEF-90C7D7776A53}.Release|Any CPU.Build.0 = Release|Any CPU
+		{015BA51E-DF5C-45D4-91C0-37BC49F0E7EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{015BA51E-DF5C-45D4-91C0-37BC49F0E7EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{015BA51E-DF5C-45D4-91C0-37BC49F0E7EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{015BA51E-DF5C-45D4-91C0-37BC49F0E7EF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
