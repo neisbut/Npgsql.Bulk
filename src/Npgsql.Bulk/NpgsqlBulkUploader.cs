@@ -28,6 +28,7 @@ namespace Npgsql.Bulk
         private static readonly Dictionary<string, object> EntityInfoLocks = new Dictionary<string, object>();
 
         private readonly DbContext context;
+        private readonly bool disableEntitiesTracking;
         private static string uniqueTablePrefix = Guid.NewGuid().ToString().Replace("-", "_");
         private static int tablesCounter = 0;
         private static readonly ConcurrentDictionary<string, object> partialCodeBuilders = new ConcurrentDictionary<string, object>();
@@ -51,6 +52,11 @@ namespace Npgsql.Bulk
         /// </summary>
         public int? CommandTimeout { get; set; }
 
+        public NpgsqlBulkUploader(DbContext context, bool disableEntitiesTracking) : this(context)
+        {
+            this.disableEntitiesTracking = disableEntitiesTracking;
+        }
+        
         public NpgsqlBulkUploader(DbContext context)
         {
             this.context = context;
@@ -225,7 +231,9 @@ namespace Npgsql.Bulk
             NpgsqlBulkCodeBuilder<T> codeBuilders,
             EntityState state)
         {
-            if (infos.PropertyNameToGenerators == null || infos.PropertyNameToGenerators.Count == 0)
+            if (infos.PropertyNameToGenerators == null 
+                || infos.PropertyNameToGenerators.Count == 0
+                || disableEntitiesTracking)
                 return;
 
             var sm = ((IDbContextDependencies)context).StateManager;
