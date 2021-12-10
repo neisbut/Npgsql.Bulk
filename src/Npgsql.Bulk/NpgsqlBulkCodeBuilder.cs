@@ -68,6 +68,7 @@ namespace Npgsql.Bulk
 
         public void InitBuilder(
             EntityInfo entityInfo,
+            bool isPartialBuilder,
             Func<Type, NpgsqlDataReader, string, object> readerFunc)
         {
             var name = NpgsqlBulkUploader.GetUniqueName(typeof(T).Name);
@@ -80,12 +81,13 @@ namespace Npgsql.Bulk
 
             typeBuilder = moduleBuilder.DefineType(name, TypeAttributes.Public);
 
-            GenerateWriteCode(entityInfo, readerFunc);
+            GenerateWriteCode(entityInfo, isPartialBuilder, readerFunc);
 
         }
 
         private void GenerateWriteCode(
             EntityInfo entityInfo,
+            bool isPartialBuilder,
             Func<Type, NpgsqlDataReader, string, object> readerFunc)
         {
             CreateWriterMethod("WriterForInsertAction", entityInfo.InsertClientDataInfos);
@@ -126,9 +128,10 @@ namespace Npgsql.Bulk
 #if EFCore
             generatedType.GetField("Converters")?.SetValue(null, converters.Select(x => x.ConvertToProvider).ToArray());
 
-            ValueHelper<T>.MappingInfos = entityInfo.InsertClientDataInfos
-                .Union(entityInfo.UpdateClientDataWithKeysInfos)
-                .ToDictionary(x => x.QualifiedColumnName);
+            if (!isPartialBuilder)
+                ValueHelper<T>.MappingInfos = entityInfo.InsertClientDataInfos
+                    .Union(entityInfo.UpdateClientDataWithKeysInfos)
+                    .ToDictionary(x => x.QualifiedColumnName);
 
             ClassifyOptionals = (Func<T, long>)generatedType.GetMethod("ClassifyOptionals")
                .CreateDelegate(typeof(Func<T, long>));

@@ -147,6 +147,12 @@ namespace Npgsql.Bulk
             return entityType.Table;
         }
 
+        internal static string GetTableSchema(DbContext context, Type t)
+        {
+            var entityType = GetEntitySet(context, t);
+            return entityType.Schema;
+        }
+
         internal static string GetTableNameQualified(DbContext context, Type t)
         {
             var entityType = GetEntitySet(context, t);

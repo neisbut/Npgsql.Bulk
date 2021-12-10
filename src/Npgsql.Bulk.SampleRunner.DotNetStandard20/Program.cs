@@ -102,8 +102,10 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 
             TestDerived(context);
 
+            TestInsertPartialUpdateAndIndsert(context, data);
+
             Console.WriteLine();
-            Console.WriteLine("Time to press any key...");
+            Console.WriteLine("Time to press enter to exit...");
             Console.ReadLine();
         }
 
@@ -224,6 +226,25 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
                 }).ToList();
 
             uploader.Update(data2);
+
+        }
+
+        static void TestInsertPartialUpdateAndIndsert(BulkContext context, List<Address> data)
+        {
+
+            Console.WriteLine("");
+            Console.WriteLine("TestInsertPartialUpdateAndIndsert...");
+            Console.WriteLine("");
+
+            context.Database.ExecuteSqlRaw("TRUNCATE addresses CASCADE");
+
+            var uploader = new NpgsqlBulkUploader(context);
+
+            uploader.Insert(data.Take(1000));
+
+            uploader.Update(data.Take(1000), x => x.Duration, x => x.ExtraHouseNumber);
+
+            uploader.Insert(data.Skip(1000).Take(1000));
 
         }
     }
