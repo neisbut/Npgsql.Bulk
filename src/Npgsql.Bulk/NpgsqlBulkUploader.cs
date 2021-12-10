@@ -56,7 +56,7 @@ namespace Npgsql.Bulk
         {
             this.disableEntitiesTracking = disableEntitiesTracking;
         }
-        
+
         public NpgsqlBulkUploader(DbContext context)
         {
             this.context = context;
@@ -231,9 +231,9 @@ namespace Npgsql.Bulk
             NpgsqlBulkCodeBuilder<T> codeBuilders,
             EntityState state)
         {
-            if (infos.PropertyNameToGenerators == null 
-                || infos.PropertyNameToGenerators.Count == 0
-                || disableEntitiesTracking)
+            if (infos.PropertyNameToGenerators == null ||
+                infos.PropertyNameToGenerators.Count == 0 ||
+                disableEntitiesTracking)
                 return;
 
             var sm = ((IDbContextDependencies)context).StateManager;
