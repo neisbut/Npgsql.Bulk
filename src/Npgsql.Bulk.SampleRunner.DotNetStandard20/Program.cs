@@ -25,6 +25,8 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 
         static void Main(string[] args)
         {
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
             var optionsBuilder = new DbContextOptionsBuilder<BulkContext>();
             optionsBuilder.UseNpgsql(Configuration.ConnectionString);
 
@@ -40,7 +42,7 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
                     HouseNumber = i + 1,
                     PostalCode = codes[i % codes.Length],
                     ExtraHouseNumber = extraNumbers[i % extraNumbers.Length],
-                    Duration = new NpgsqlTypes.NpgsqlRange<DateTime>(DateTime.Now, DateTime.Now),
+                    Duration = new NpgsqlTypes.NpgsqlRange<DateTime>(DateTime.UtcNow, DateTime.UtcNow),
                     AddressType = i % 2 == 0 ? AddressType.Type1 : AddressType.Type2,
                     AddressTypeInt = i % 2 == 0 ? AddressTypeInt.First : AddressTypeInt.Second,
                     UnmappedEnum = i % 2 == 0 ? UnmappedEnum.A : UnmappedEnum.B,
@@ -52,7 +54,7 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
             context.Attach(data[0]);
             data[0].AddressId = 11;
 
-            data[1].CreatedAt = DateTime.Now;
+            data[1].CreatedAt = DateTime.UtcNow;
 
             //context.Add(data[0]);
             //context.Add(data[1]);
@@ -62,6 +64,7 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 
             var sw = Stopwatch.StartNew();
             uploader.Insert(data);
+            context.SaveChanges();
             sw.Stop();
             Console.WriteLine($"Dynamic solution inserted {data.Count} records for {sw.Elapsed }");
 
