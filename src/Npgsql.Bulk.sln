@@ -32,9 +32,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.SampleRunner.Do
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.DotNet5", "Npgsql.Bulk.DotNet5\Npgsql.Bulk.DotNet5.csproj", "{FB063D36-C1BD-4D15-8E2B-BC285CD58A2D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.DotNet6", "Npgsql.Bulk.DotNet6\Npgsql.Bulk.DotNet6.csproj", "{CEFBB972-DE5D-4023-BCEF-90C7D7776A53}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.DotNet6", "Npgsql.Bulk.DotNet6\Npgsql.Bulk.DotNet6.csproj", "{CEFBB972-DE5D-4023-BCEF-90C7D7776A53}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.SampleRunner.DotNet6", "Npgsql.Bulk.SampleRunner.DotNet6\Npgsql.Bulk.SampleRunner.DotNet6.csproj", "{015BA51E-DF5C-45D4-91C0-37BC49F0E7EF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.SampleRunner.DotNet6", "Npgsql.Bulk.SampleRunner.DotNet6\Npgsql.Bulk.SampleRunner.DotNet6.csproj", "{015BA51E-DF5C-45D4-91C0-37BC49F0E7EF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.SampleRunner.DotNet7", "Npgsql.Bulk.SampleRunner.DotNet7\Npgsql.Bulk.SampleRunner.DotNet7.csproj", "{F4991AE2-D513-4A2F-9D8A-907E83BB4855}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.DotNet7", "Npgsql.Bulk.DotNet7\Npgsql.Bulk.DotNet7.csproj", "{EEA98423-2941-4B4E-A114-4A653A83CA7A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -94,6 +98,14 @@ Global
 		{015BA51E-DF5C-45D4-91C0-37BC49F0E7EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{015BA51E-DF5C-45D4-91C0-37BC49F0E7EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{015BA51E-DF5C-45D4-91C0-37BC49F0E7EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4991AE2-D513-4A2F-9D8A-907E83BB4855}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4991AE2-D513-4A2F-9D8A-907E83BB4855}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4991AE2-D513-4A2F-9D8A-907E83BB4855}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4991AE2-D513-4A2F-9D8A-907E83BB4855}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EEA98423-2941-4B4E-A114-4A653A83CA7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EEA98423-2941-4B4E-A114-4A653A83CA7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EEA98423-2941-4B4E-A114-4A653A83CA7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EEA98423-2941-4B4E-A114-4A653A83CA7A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
