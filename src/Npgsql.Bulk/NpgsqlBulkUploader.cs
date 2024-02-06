@@ -16,6 +16,10 @@ using System.Threading.Tasks;
 using System.Reflection.Emit;
 using System.Threading;
 using System.Linq.Expressions;
+#if NET8_0
+using Npgsql.Internal;
+#endif
+using Npgsql.TypeMapping;
 
 namespace Npgsql.Bulk
 {
@@ -180,6 +184,18 @@ namespace Npgsql.Bulk
                     var userTypeMappings = (ConcurrentDictionary<string, Internal.TypeMapping.IUserTypeMapping>)
                         mapper.GetType().GetProperty("UserTypeMappings").GetValue(mapper);
                     if (userTypeMappings.ContainsKey(info.ColumnType))
+                    {
+                        return NpgsqlDbType.Unknown;
+                    }
+#elif NET8_0
+                    // Allow postgres enum types to be mapped to CLR enums
+                    var mapper = NpgsqlConnection.GlobalTypeMapper;
+                    var userTypeMapper = mapper.GetType()
+                        .GetField("_userTypeMapper", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .GetValue(mapper);
+                    var userTypeMappings = (IList<UserTypeMapping>)userTypeMapper.GetType().GetProperty("Items").GetValue(userTypeMapper);
+
+                    if (userTypeMappings != null && userTypeMappings.Any(x => x.PgTypeName == info.ColumnType))
                     {
                         return NpgsqlDbType.Unknown;
                     }

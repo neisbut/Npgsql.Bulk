@@ -40,6 +40,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.SampleRunner.Do
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Npgsql.Bulk.DotNet7", "Npgsql.Bulk.DotNet7\Npgsql.Bulk.DotNet7.csproj", "{EEA98423-2941-4B4E-A114-4A653A83CA7A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.DotNet8", "Npgsql.Bulk.DotNet8\Npgsql.Bulk.DotNet8.csproj", "{632E69BB-3B8A-43FA-80DB-C121B655741C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Npgsql.Bulk.SampleRunner.DotNet8", "Npgsql.Bulk.SampleRunner.DotNet8\Npgsql.Bulk.SampleRunner.DotNet8.csproj", "{8C527258-804B-4B04-A9E1-FF342566D2C7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -106,6 +110,14 @@ Global
 		{EEA98423-2941-4B4E-A114-4A653A83CA7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EEA98423-2941-4B4E-A114-4A653A83CA7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EEA98423-2941-4B4E-A114-4A653A83CA7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{632E69BB-3B8A-43FA-80DB-C121B655741C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{632E69BB-3B8A-43FA-80DB-C121B655741C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{632E69BB-3B8A-43FA-80DB-C121B655741C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{632E69BB-3B8A-43FA-80DB-C121B655741C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C527258-804B-4B04-A9E1-FF342566D2C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C527258-804B-4B04-A9E1-FF342566D2C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C527258-804B-4B04-A9E1-FF342566D2C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C527258-804B-4B04-A9E1-FF342566D2C7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

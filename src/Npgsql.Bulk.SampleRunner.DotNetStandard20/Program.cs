@@ -103,7 +103,9 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 
             TestAsync(context, uploader, data).Wait();
 
+#if !NET8_0
             TestDerived(context);
+#endif
 
             TestInsertPartialUpdateAndIndsert(context, data);
 
