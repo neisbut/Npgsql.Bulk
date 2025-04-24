@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Npgsql.Bulk</AssemblyName>
+    <RootNamespace>Npgsql.Bulk</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE;EFCore;EFCoreRaw</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;EFCore;EFCoreRaw</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Npgsql.Bulk.DotNetStandard20\NpgsqlHelper.cs" Link="NpgsqlHelper.cs" />
+    <Compile Include="..\Npgsql.Bulk.DotNetStandard20\RelationalHelper.cs" Link="RelationalHelper.cs" />
+    <Compile Include="..\Npgsql.Bulk.DotNetStandard20\ValueHelper.cs" Link="ValueHelper.cs" />
+    <Compile Include="..\Npgsql.Bulk\BulkMappingSourceAttribute.cs" Link="BulkMappingSourceAttribute.cs" />
+    <Compile Include="..\Npgsql.Bulk\BulkOperationModification.cs" Link="BulkOperationModification.cs" />
+    <Compile Include="..\Npgsql.Bulk\BulkOperationModifierAttribute.cs" Link="BulkOperationModifierAttribute.cs" />
+    <Compile Include="..\Npgsql.Bulk\InsertConflictAction.cs" Link="InsertConflictAction.cs" />
+    <Compile Include="..\Npgsql.Bulk\IRelationalHelper.cs" Link="IRelationalHelper.cs" />
+    <Compile Include="..\Npgsql.Bulk\Model\ColumnInfo.cs" Link="Model\ColumnInfo.cs" />
+    <Compile Include="..\Npgsql.Bulk\Model\EntityInfo.cs" Link="Model\EntityInfo.cs" />
+    <Compile Include="..\Npgsql.Bulk\Model\InsertQueryParts.cs" Link="Model\InsertQueryParts.cs" />
+    <Compile Include="..\Npgsql.Bulk\Model\MappingInfo.cs" Link="Model\MappingInfo.cs" />
+    <Compile Include="..\Npgsql.Bulk\Model\TableLockLevel.cs" Link="Model\TableLockLevel.cs" />
+    <Compile Include="..\Npgsql.Bulk\Model\UpdateQueryParts.cs" Link="Model\UpdateQueryParts.cs" />
+    <Compile Include="..\Npgsql.Bulk\NpgsqlBulkCodeBuilder.cs" Link="NpgsqlBulkCodeBuilder.cs" />
+    <Compile Include="..\Npgsql.Bulk\NpgsqlBulkUploader.cs" Link="NpgsqlBulkUploader.cs" />
+    <Compile Include="..\Npgsql.Bulk\OperationContext.cs" Link="OperationContext.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.0" />
+  </ItemGroup>
+
+</Project>

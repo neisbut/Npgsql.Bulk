@@ -199,6 +199,18 @@ namespace Npgsql.Bulk
                     {
                         return NpgsqlDbType.Unknown;
                     }
+#elif NET9_0
+                    // Allow postgres enum types to be mapped to CLR enums
+                    var mapper = NpgsqlConnection.GlobalTypeMapper;
+                    var userTypeMapper = mapper.GetType()
+                        .GetField("_userTypeMapper", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .GetValue(mapper);
+                    var userTypeMappings = (IList<UserTypeMapping>)userTypeMapper.GetType().GetProperty("Items").GetValue(userTypeMapper);
+
+                    if (userTypeMappings != null && userTypeMappings.Any(x => x.PgTypeName == info.ColumnType))
+                    {
+                        return NpgsqlDbType.Unknown;
+                    }
 #elif EFCore
                     // Allow postgres enum types to be mapped to CLR enums
                     var clrType = RelationalHelper.GetNpgsqlConnection(context).TypeMapper.Mappings

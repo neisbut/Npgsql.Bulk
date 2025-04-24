@@ -36,9 +36,11 @@ namespace Npgsql.Bulk.DAL
             modelBuilder.Entity<Address>().Property(x => x.PostalCode)
                 .HasConversion(x => "1" + x, x => x.Substring(1));
 
+#if NET9_0
+            modelBuilder.Entity<Address>().Property(typeof(uint), "xmin").IsRowVersion();
+#else
             modelBuilder.Entity<Address>().UseXminAsConcurrencyToken();
-
-            // modelBuilder.Entity<Address>().Property(x => x.HiLo).UseHiLo();
+#endif
         }
     }
 

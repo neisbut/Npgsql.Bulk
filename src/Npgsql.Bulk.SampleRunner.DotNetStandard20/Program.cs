@@ -103,7 +103,9 @@ namespace Npgsql.Bulk.SampleRunner.DotNetStandard20
 
             TestAsync(context, uploader, data).Wait();
 
-#if !NET8_0
+#if NET8_0_OR_GREATER
+            // Skip
+#else
             TestDerived(context);
 #endif
 
