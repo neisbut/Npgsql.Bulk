@@ -1028,7 +1028,7 @@ namespace Npgsql.Bulk
                 x.ModifierAttributes = modifiers?.ToList() ?? new List<BulkOperationModifierAttribute>();
                 x.OverrideSourceMethod = GetOverrideSouceFunc(type, sourceAttribute?.PropertyName);
                 x.NpgsqlType = GetNpgsqlType(x.ColumnInfo);
-                x.TempAliasedColumnName = $"{x.TableName}_{x.ColumnInfo.ColumnName}".ToLower();
+                x.TempAliasedColumnName = Guid.NewGuid().ToString().Replace("-", "_");
                 x.QualifiedColumnName = $"{NpgsqlHelper.GetQualifiedName(x.TableName)}.{NpgsqlHelper.GetQualifiedName(x.ColumnInfo.ColumnName)}";
             });
             return mappings;
